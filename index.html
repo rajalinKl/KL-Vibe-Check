@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KL Vibe Check — Dining & Cafe Directory</title>
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts & Lucide Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Leaflet OpenStreetMap CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -77,7 +74,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
 
-    <!-- Header Navigation -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
@@ -108,21 +104,18 @@
         </div>
     </header>
 
-    <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
 
-        <!-- LEVEL 1: Core Homepage Vibe Hubs -->
         <section>
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h2 class="text-xl font-extrabold text-slate-900">Explore by Vibe Hub</h2>
-                    <p class="text-xs text-slate-500">Pick an atmosphere to unlock tailored feature sub-filters</p>
+                    <p class="text-xs text-slate-500">Pick an atmosphere to unlock tailored listing</p>
                 </div>
                 <button onclick="selectHub('all')" id="resetHubBtn" class="text-xs font-bold text-rose-500 hover:underline">Show All Vibes</button>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <!-- Hub 1 -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div id="hub-speakeasy" onclick="selectHub('speakeasy')" class="hub-card cursor-pointer group relative bg-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-800">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🍸</div>
                     <p class="text-2xl mb-2">🍸</p>
@@ -130,7 +123,6 @@
                     <p class="text-xs text-slate-400 mt-1">Intimate, low-light, dates & hidden bars</p>
                 </div>
 
-                <!-- Hub 2 -->
                 <div id="hub-rooftop" onclick="selectHub('rooftop')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌆</div>
                     <p class="text-2xl mb-2">🌆</p>
@@ -138,7 +130,6 @@
                     <p class="text-xs text-slate-300 mt-1">Skylines, sunset drinks & high energy</p>
                 </div>
 
-                <!-- Hub 3 -->
                 <div id="hub-outdoor-nature" onclick="selectHub('outdoor-nature')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-emerald-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌿</div>
                     <p class="text-2xl mb-2">🌿</p>
@@ -146,17 +137,22 @@
                     <p class="text-xs text-emerald-200 mt-1">Garden cafes, alfresco & lush greenery</p>
                 </div>
 
-                <!-- Hub 4 -->
                 <div id="hub-street-night" onclick="selectHub('street-night')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-amber-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌙</div>
                     <p class="text-2xl mb-2">🌙</p>
                     <h3 class="text-base font-bold text-white leading-snug">Late Night & Street Eats</h3>
                     <p class="text-xs text-amber-200 mt-1">Night markets & post-midnight cravings</p>
                 </div>
+
+                <div id="hub-party" onclick="selectHub('party')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-purple-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-purple-900/50">
+                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🪩</div>
+                    <p class="text-2xl mb-2">🪩</p>
+                    <h3 class="text-base font-bold text-white leading-snug">Party & Nightlife</h3>
+                    <p class="text-xs text-purple-200 mt-1">Clubs, lounges & live DJ music</p>
+                </div>
             </div>
         </section>
 
-        <!-- LEVEL 2: Practical Feature Tags (Revealed ONLY when a Level 1 Hub is selected) -->
         <section id="level2Section" class="hidden bg-white p-4 rounded-2xl border border-rose-100/80 flex flex-wrap items-center justify-between gap-3 shadow-sm transition-all duration-300">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
@@ -169,14 +165,12 @@
             </div>
         </section>
 
-        <!-- Interactive Map Section -->
         <section id="mapSection" class="hidden">
             <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
                 <div id="mapContainer"></div>
             </div>
         </section>
 
-        <!-- Indoor Seating Section -->
         <section id="indoorSection">
             <div class="flex items-center gap-2 mb-4">
                 <h2 class="text-xl font-bold text-slate-900">🏠 Indoor Seating Only</h2>
@@ -185,468 +179,7 @@
             <div id="indoorContainer" class="pin-grid"></div>
         </section>
 
-        <!-- Outdoor Seating Section -->
         <section id="outdoorSection">
             <div class="flex items-center gap-2 mb-4">
                 <h2 class="text-xl font-bold text-slate-900">🌿 Outdoor / Alfresco Seating Available</h2>
-                <span id="outdoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
-            </div>
-            <div id="outdoorContainer" class="pin-grid"></div>
-        </section>
-
-        <div id="noResults" class="hidden py-16 text-center text-slate-400">
-            <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-            <p class="text-lg font-medium">No dining spots found matching your search.</p>
-        </div>
-    </main>
-
-    <!-- Suggest Spot Modal -->
-    <div id="suggestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-slate-100">
-            <button onclick="closeSuggestModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            
-            <div class="mb-5">
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-5 h-5 text-rose-500"></i> Suggest a KL Spot
-                </h2>
-                <p class="text-xs text-slate-500 mt-1">Know a new viral spot or hidden gem in KL? Send it over!</p>
-            </div>
-
-            <form id="suggestForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Place Name</label>
-                    <input type="text" name="place_name" required placeholder="e.g. Tone Cafe" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Core Vibe Hub</label>
-                        <select name="vibe_category" id="vibe-select" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                            <option value="" disabled selected>Select Core Hub...</option>
-                            <optgroup label="Core Homepage Vibe Hubs">
-                                <option value="speakeasy">🍸 Speakeasies & Mood</option>
-                                <option value="rooftop">🌆 Rooftops & Views</option>
-                                <option value="outdoor-nature">🌿 Outdoor & Nature</option>
-                                <option value="street-night">🌙 Late Night & Street Eats</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Area</label>
-                        <input type="text" name="area" required placeholder="e.g. Bangsar" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Instagram Handle / Link (Optional)</label>
-                    <input type="text" name="social_link" placeholder="e.g. @tonecafe.kl" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Why should it be listed?</label>
-                    <textarea name="description" rows="2" placeholder="Tell us what makes this spot special..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition"></textarea>
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm rounded-xl transition shadow-md shadow-rose-500/20 flex items-center justify-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation
-                </button>
-            </form>
-
-            <div id="formSuccessMessage" class="hidden text-center py-6">
-                <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500 mx-auto mb-2"></i>
-                <h3 class="text-base font-bold text-slate-900">Thank you!</h3>
-                <p class="text-xs text-slate-500 mt-1">Your suggestion has been sent. We'll review and add it to the list!</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
-
-        const hubTitles = {
-            "speakeasy": "🍸 Speakeasies & Mood",
-            "rooftop": "🌆 Rooftops & Views",
-            "outdoor-nature": "🌿 Outdoor & Nature",
-            "street-night": "🌙 Late Night & Street Eats"
-        };
-
-        const areaCoordinates = {
-            "chinatown": [3.1439, 101.6974],
-            "petaling street": [3.1439, 101.6974],
-            "imbi": [3.1422, 101.7100],
-            "bangsar": [3.1292, 101.6713],
-            "pavilion / bukit bintang": [3.1488, 101.7132],
-            "bukit bintang": [3.1488, 101.7132],
-            "pj old town": [3.0872, 101.6461],
-            "dataran merdeka": [3.1480, 101.6937],
-            "chow kit": [3.1636, 101.6980],
-            "segambut": [3.1856, 101.6606],
-            "desa sri hartamas": [3.1610, 101.6508],
-            "hartamas": [3.1610, 101.6508],
-            "ttdi": [3.1367, 101.6219],
-            "kl city centre": [3.1579, 101.7116],
-            "damansara jaya": [3.1278, 101.6163],
-            "taman oug": [3.0736, 101.6719],
-            "kelana jaya": [3.1022, 101.5975],
-            "ampang": [3.1500, 101.7600],
-            "ldp ss7": [3.0988, 101.5950],
-            "sungai penchala": [3.1622, 101.6250],
-            "1-altitude kl": [3.1579, 101.7116],
-            "bukit lanjan": [3.1700, 101.6100],
-            "janda baik / outskirts": [3.3167, 101.8667],
-            "kajang": [2.9935, 101.7874],
-            "batang kali": [3.4684, 101.6392],
-            "semenyih": [2.9481, 101.8465],
-            "linc kl / bangsar": [3.1570, 101.7190],
-            "damansara": [3.1500, 101.6200],
-            "klcc": [3.1579, 101.7116],
-            "klcc view": [3.1579, 101.7116],
-            "mahsa avenue": [3.1188, 101.6521],
-            "kl city": [3.1466, 101.6958],
-            "kuala lumpur": [3.1390, 101.6869],
-            "bukit ceylon": [3.1492, 101.7042],
-            "pavilion / empire subang": [3.0820, 101.5822],
-            "section 17": [3.1250, 101.6350],
-            "avenue k / sunway": [3.1594, 101.7136],
-            "jalan ampang": [3.1585, 101.7150],
-            "kampung baru": [3.1619, 101.7031],
-            "brickfields": [3.1292, 101.6838],
-            "ss2 / bukit jalil": [3.1188, 101.6231],
-            "the five, bukit damansara": [3.1500, 101.6620],
-            "bukit damansara": [3.1500, 101.6620],
-            "passer seni / kl": [3.1425, 101.6955],
-            "publika": [3.1708, 101.6658],
-            "ara damansara": [3.1283, 101.5783],
-            "titiwangsa": [3.1800, 101.7000],
-            "cybersouth": [2.8800, 101.6500],
-            "jalan raja chulan": [3.1500, 101.7080],
-            "bangsar shopping centre": [3.1430, 101.6670],
-            "avenue k": [3.1594, 101.7136],
-            "plaza damansara": [3.1520, 101.6530],
-            "jalan sultan": [3.1428, 101.6983],
-            "jalan sultan ismail": [3.1580, 101.7030]
-        };
-
-        let restaurants = [];
-        let currentHub = 'all';
-        let activeFeatures = [];
-        let map = null;
-        let mapMarkers = [];
-        let isMapVisible = false;
-
-        function openSuggestModal() {
-            document.getElementById('suggestModal').classList.remove('hidden');
-            document.getElementById('suggestForm').classList.remove('hidden');
-            document.getElementById('formSuccessMessage').classList.add('hidden');
-            lucide.createIcons();
-        }
-
-        function closeSuggestModal() {
-            document.getElementById('suggestModal').classList.add('hidden');
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Sending...";
-
-            const formData = new FormData(event.target);
-
-            try {
-                const response = await fetch("https://formspree.io/f/mqakvode", {
-                    method: "POST",
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                if (response.ok) {
-                    document.getElementById('suggestForm').classList.add('hidden');
-                    document.getElementById('formSuccessMessage').classList.remove('hidden');
-                    event.target.reset();
-                } else {
-                    alert("There was an issue sending your recommendation. Please try again.");
-                }
-            } catch (err) {
-                console.error("Form error:", err);
-                alert("Network error. Please try again later.");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation`;
-                lucide.createIcons();
-            }
-        }
-
-        function selectHub(hub) {
-            currentHub = hub;
-            document.querySelectorAll('.hub-card').forEach(card => card.classList.remove('active-hub'));
-
-            const level2Sec = document.getElementById('level2Section');
-            const activeHubLabel = document.getElementById('activeHubLabel');
-
-            if (hub !== 'all') {
-                const selectedCard = document.getElementById(`hub-${hub}`);
-                if (selectedCard) selectedCard.classList.add('active-hub');
-                
-                // Reveal Level 2 sub-filters
-                level2Sec.classList.remove('hidden');
-                activeHubLabel.innerText = `Sub-filters for ${hubTitles[hub] || hub}:`;
-            } else {
-                // Hide Level 2 sub-filters when showing all vibes
-                level2Sec.classList.add('hidden');
-                activeFeatures = [];
-                resetFeatureButtons();
-            }
-
-            renderGrid();
-        }
-
-        function resetFeatureButtons() {
-            document.querySelectorAll('.feature-tag').forEach(btn => {
-                btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-500');
-                btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
-            });
-        }
-
-        function initMap() {
-            if (map) return;
-            map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-        }
-
-        function getEmojiForKey(catKey) {
-            if (catKey.includes('rooftop')) return '🌆';
-            if (catKey.includes('insta')) return '📸';
-            if (catKey.includes('pet')) return '🐾';
-            if (catKey.includes('nature') || catKey.includes('outdoor')) return '🌿';
-            if (catKey.includes('halal')) return '✨';
-            if (catKey.includes('street') || catKey.includes('night')) return '🌙';
-            if (catKey.includes('speak')) return '🍸';
-            return '📍';
-        }
-
-        function createEmojiIcon(catKey) {
-            const emoji = getEmojiForKey(catKey);
-            return L.divIcon({
-                className: 'custom-vibe-icon',
-                html: `<div class="vibe-marker-pin"><span class="vibe-marker-emoji">${emoji}</span></div>`,
-                iconSize: [36, 36],
-                iconAnchor: [18, 36],
-                popupAnchor: [0, -32]
-            });
-        }
-
-        function updateMapMarkers(items) {
-            if (!map) initMap();
-
-            mapMarkers.forEach(marker => map.removeLayer(marker));
-            mapMarkers = [];
-
-            items.forEach(item => {
-                const areaKey = (item.area || '').toLowerCase().trim();
-                const catKey = (item.cat || '').toLowerCase().trim();
-                const coords = areaCoordinates[areaKey] || [3.1390 + (Math.random() - 0.5) * 0.05, 101.6869 + (Math.random() - 0.5) * 0.05];
-                const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-
-                const popupContent = `
-                    <div style="width: 180px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                        <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
-                        <span style="font-size: 10px; font-weight: bold; color: #E11D48; text-transform: uppercase;">${item.area || 'KL'}</span>
-                        <h4 style="font-size: 13px; font-weight: bold; margin: 2px 0 4px 0; color: #0F172A;">${item.name}</h4>
-                        <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #F43F5E; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
-                    </div>
-                `;
-
-                const markerIcon = createEmojiIcon(catKey);
-                const marker = L.marker(coords, { icon: markerIcon }).addTo(map).bindPopup(popupContent);
-                mapMarkers.push(marker);
-            });
-        }
-
-        function toggleMapView() {
-            const mapSec = document.getElementById('mapSection');
-            const toggleBtn = document.getElementById('mapToggleBtn');
-
-            isMapVisible = !isMapVisible;
-
-            if (isMapVisible) {
-                mapSec.classList.remove('hidden');
-                toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Grid View`;
-                initMap();
-                setTimeout(() => map.invalidateSize(), 200);
-            } else {
-                mapSec.classList.add('hidden');
-                toggleBtn.innerHTML = `<i data-lucide="map" class="w-4 h-4"></i> Map View`;
-            }
-            lucide.createIcons();
-        }
-
-        async function fetchSheetData() {
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("HTTP Error " + response.status);
-                
-                const rawData = await response.json();
-
-                restaurants = rawData.map(row => {
-                    let cleanItem = {};
-
-                    if (row['name,cat,area,price,tag,img,desc']) {
-                        const parts = row['name,cat,area,price,tag,img,desc'].split(',');
-                        cleanItem.name = (parts[0] || '').trim();
-                        cleanItem.cat = (parts[1] || '').trim().toLowerCase();
-                        cleanItem.area = (parts[2] || '').trim();
-                        cleanItem.price = (parts[3] || '').trim();
-                        cleanItem.tag = (parts[4] || '').trim();
-                        cleanItem.img = (parts[5] || '').trim();
-                        cleanItem.desc = (parts[6] || '').trim();
-                    } else {
-                        Object.keys(row).forEach(key => {
-                            const cleanKey = key.trim().toLowerCase();
-                            let val = row[key] ? String(row[key]).trim() : '';
-                            if (cleanKey === 'cat') val = val.toLowerCase();
-                            cleanItem[cleanKey] = val;
-                        });
-                    }
-
-                    return cleanItem;
-                }).filter(item => item.name);
-
-                renderGrid();
-            } catch (err) {
-                console.error("Error fetching Google Sheet data:", err);
-            }
-        }
-
-        function createCard(item) {
-            const card = document.createElement('div');
-            card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1";
-            
-            const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-
-            card.innerHTML = `
-                <div class="relative overflow-hidden aspect-[4/5] bg-slate-100 cursor-pointer" onclick="window.open('${gmapsUrl}', '_blank')">
-                    <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
-                    
-                    <div class="absolute top-3 left-3 flex gap-2">
-                        <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
-                    </div>
-
-                    <div class="absolute top-3 right-3">
-                        <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-                    </div>
-
-                    <div class="absolute bottom-0 inset-x-0 p-4 text-white">
-                        <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
-                        <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
-                        <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
-                    </div>
-                </div>
-                
-                <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
-                    <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area}</span>
-                    <a href="${gmapsUrl}" target="_blank" class="flex items-center gap-1 text-rose-500 font-bold hover:underline">
-                        Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-            `;
-            return card;
-        }
-
-        function renderGrid() {
-            const indoorContainer = document.getElementById('indoorContainer');
-            const outdoorContainer = document.getElementById('outdoorContainer');
-            const indoorSection = document.getElementById('indoorSection');
-            const outdoorSection = document.getElementById('outdoorSection');
-            const noResults = document.getElementById('noResults');
-
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-
-            indoorContainer.innerHTML = '';
-            outdoorContainer.innerHTML = '';
-
-            const filtered = restaurants.filter(item => {
-                const cats = (item.cat || '').toLowerCase().split(',').map(c => c.trim());
-                
-                // Match Level 1 Vibe Hub
-                let matchHub = (currentHub === 'all');
-                if (!matchHub) {
-                    matchHub = cats.some(c => c.includes(currentHub));
-                }
-
-                // Match Level 2 Feature Filters
-                let matchFeatures = true;
-                if (activeFeatures.length > 0) {
-                    matchFeatures = activeFeatures.every(feat => cats.some(c => c.includes(feat)));
-                }
-
-                const matchSearch = (item.name || '').toLowerCase().includes(query) || 
-                                    (item.area || '').toLowerCase().includes(query) || 
-                                    (item.desc || '').toLowerCase().includes(query) ||
-                                    (item.tag || '').toLowerCase().includes(query);
-
-                return matchHub && matchFeatures && matchSearch;
-            });
-
-            updateMapMarkers(filtered);
-
-            let indoorCount = 0;
-            let outdoorCount = 0;
-
-            filtered.forEach(item => {
-                const textCheck = (item.desc + ' ' + item.tag + ' ' + item.cat).toLowerCase();
-                const isOutdoor = textCheck.includes('outdoor') || textCheck.includes('alfresco') || textCheck.includes('patio') || textCheck.includes('garden') || textCheck.includes('courtyard') || textCheck.includes('terrace') || textCheck.includes('pool') || textCheck.includes('rooftop') || textCheck.includes('open-air');
-
-                const card = createCard(item);
-
-                if (isOutdoor) {
-                    outdoorContainer.appendChild(card);
-                    outdoorCount++;
-                } else {
-                    indoorContainer.appendChild(card);
-                    indoorCount++;
-                }
-            });
-
-            document.getElementById('indoorCount').innerText = indoorCount;
-            document.getElementById('outdoorCount').innerText = outdoorCount;
-
-            indoorSection.style.display = indoorCount > 0 ? 'block' : 'none';
-            outdoorSection.style.display = outdoorCount > 0 ? 'block' : 'none';
-            noResults.style.display = (indoorCount === 0 && outdoorCount === 0) ? 'block' : 'none';
-
-            lucide.createIcons();
-        }
-
-        function toggleFeature(feature) {
-            const index = activeFeatures.indexOf(feature);
-            const btn = document.getElementById(`tag-${feature}`);
-
-            if (index > -1) {
-                activeFeatures.splice(index, 1);
-                btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-500');
-                btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
-            } else {
-                activeFeatures.push(feature);
-                btn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
-                btn.classList.add('bg-rose-500', 'text-white', 'border-rose-500');
-            }
-
-            renderGrid();
-        }
-
-        function filterPlaces() {
-            renderGrid();
-        }
-
-        fetchSheetData();
-    </script>
-</body>
-</html>
+                <span id="outdoorCount" class="bg-slate-200 text

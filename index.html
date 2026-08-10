@@ -63,6 +63,14 @@
             user-select: none;
         }
 
+        /* Active Hero Card Ring */
+        .hub-card.active-hub {
+            ring-width: 2px;
+            --tw-ring-color: #F43F5E;
+            border-color: #F43F5E !important;
+            transform: translateY(-2px);
+        }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
     </style>
@@ -101,21 +109,21 @@
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-10">
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
 
         <!-- LEVEL 1: Core Homepage Vibe Hubs -->
         <section>
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h2 class="text-xl font-extrabold text-slate-900">Explore by Vibe Hub</h2>
-                    <p class="text-xs text-slate-500">Pick an atmosphere to discover curated spots across KL</p>
+                    <p class="text-xs text-slate-500">Pick an atmosphere to unlock tailored feature sub-filters</p>
                 </div>
-                <button onclick="setCategory('all')" id="resetHubBtn" class="text-xs font-bold text-rose-500 hover:underline">Show All Vibes</button>
+                <button onclick="selectHub('all')" id="resetHubBtn" class="text-xs font-bold text-rose-500 hover:underline">Show All Vibes</button>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <!-- Hub 1 -->
-                <div onclick="setCategory('speakeasy')" class="hub-card cursor-pointer group relative bg-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-800">
+                <div id="hub-speakeasy" onclick="selectHub('speakeasy')" class="hub-card cursor-pointer group relative bg-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-800">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🍸</div>
                     <p class="text-2xl mb-2">🍸</p>
                     <h3 class="text-base font-bold text-white leading-snug">Speakeasies & Mood</h3>
@@ -123,7 +131,7 @@
                 </div>
 
                 <!-- Hub 2 -->
-                <div onclick="setCategory('rooftop')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-900/50">
+                <div id="hub-rooftop" onclick="selectHub('rooftop')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌆</div>
                     <p class="text-2xl mb-2">🌆</p>
                     <h3 class="text-base font-bold text-white leading-snug">Rooftops & Views</h3>
@@ -131,7 +139,7 @@
                 </div>
 
                 <!-- Hub 3 -->
-                <div onclick="setCategory('outdoor-nature')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-emerald-900/50">
+                <div id="hub-outdoor-nature" onclick="selectHub('outdoor-nature')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-emerald-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌿</div>
                     <p class="text-2xl mb-2">🌿</p>
                     <h3 class="text-base font-bold text-white leading-snug">Outdoor & Nature</h3>
@@ -139,7 +147,7 @@
                 </div>
 
                 <!-- Hub 4 -->
-                <div onclick="setCategory('street-night')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-amber-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-900/50">
+                <div id="hub-street-night" onclick="selectHub('street-night')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-amber-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-900/50">
                     <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌙</div>
                     <p class="text-2xl mb-2">🌙</p>
                     <h3 class="text-base font-bold text-white leading-snug">Late Night & Street Eats</h3>
@@ -148,9 +156,12 @@
             </div>
         </section>
 
-        <!-- LEVEL 2: Practical Feature Tags (Filters) -->
-        <section class="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Practical Feature Filters:</span>
+        <!-- LEVEL 2: Practical Feature Tags (Revealed ONLY when a Level 1 Hub is selected) -->
+        <section id="level2Section" class="hidden bg-white p-4 rounded-2xl border border-rose-100/80 flex flex-wrap items-center justify-between gap-3 shadow-sm transition-all duration-300">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                <span id="activeHubLabel" class="text-xs font-bold text-slate-700 capitalize">Sub-filters for selected vibe:</span>
+            </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="toggleFeature('instagrammable')" id="tag-instagrammable" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">📸 Instagrammable</button>
                 <button onclick="toggleFeature('halal-aesthetic')" id="tag-halal-aesthetic" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">✨ Halal Aesthetic</button>
@@ -254,6 +265,13 @@
     <script>
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
+
+        const hubTitles = {
+            "speakeasy": "🍸 Speakeasies & Mood",
+            "rooftop": "🌆 Rooftops & Views",
+            "outdoor-nature": "🌿 Outdoor & Nature",
+            "street-night": "🌙 Late Night & Street Eats"
+        };
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -360,6 +378,37 @@
                 submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation`;
                 lucide.createIcons();
             }
+        }
+
+        function selectHub(hub) {
+            currentHub = hub;
+            document.querySelectorAll('.hub-card').forEach(card => card.classList.remove('active-hub'));
+
+            const level2Sec = document.getElementById('level2Section');
+            const activeHubLabel = document.getElementById('activeHubLabel');
+
+            if (hub !== 'all') {
+                const selectedCard = document.getElementById(`hub-${hub}`);
+                if (selectedCard) selectedCard.classList.add('active-hub');
+                
+                // Reveal Level 2 sub-filters
+                level2Sec.classList.remove('hidden');
+                activeHubLabel.innerText = `Sub-filters for ${hubTitles[hub] || hub}:`;
+            } else {
+                // Hide Level 2 sub-filters when showing all vibes
+                level2Sec.classList.add('hidden');
+                activeFeatures = [];
+                resetFeatureButtons();
+            }
+
+            renderGrid();
+        }
+
+        function resetFeatureButtons() {
+            document.querySelectorAll('.feature-tag').forEach(btn => {
+                btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-500');
+                btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+            });
         }
 
         function initMap() {
@@ -526,13 +575,13 @@
             const filtered = restaurants.filter(item => {
                 const cats = (item.cat || '').toLowerCase().split(',').map(c => c.trim());
                 
-                // Match Core Hub
+                // Match Level 1 Vibe Hub
                 let matchHub = (currentHub === 'all');
                 if (!matchHub) {
                     matchHub = cats.some(c => c.includes(currentHub));
                 }
 
-                // Match Practical Features
+                // Match Level 2 Feature Filters
                 let matchFeatures = true;
                 if (activeFeatures.length > 0) {
                     matchFeatures = activeFeatures.every(feat => cats.some(c => c.includes(feat)));
@@ -574,11 +623,6 @@
             noResults.style.display = (indoorCount === 0 && outdoorCount === 0) ? 'block' : 'none';
 
             lucide.createIcons();
-        }
-
-        function setCategory(hub) {
-            currentHub = hub;
-            renderGrid();
         }
 
         function toggleFeature(feature) {

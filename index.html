@@ -99,24 +99,44 @@
             </div>
         </div>
 
-        <!-- Grouped Category Filter Bar -->
+        <!-- Category Dropdowns & Filter Bar -->
         <div class="max-w-7xl mx-auto mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold">
-            <button onclick="setCategory('all')" class="cat-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">All Vibes</button>
+            <button onclick="setCategory('all', event)" class="cat-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">All Vibes</button>
             
             <div class="h-4 w-px bg-slate-200 mx-1"></div>
 
-            <!-- Atmosphere & Energy Subcategories -->
-            <button onclick="setCategory('speakeasy')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasy & Intimate</button>
-            <button onclick="setCategory('rooftop')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌆 Rooftop & Skyline Views</button>
-            <button onclick="setCategory('outdoor-nature')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌿 Nature & Outdoor</button>
-            <button onclick="setCategory('street-night')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌙 Late Night & Street</button>
+            <!-- Main Category 1: Atmosphere & Energy -->
+            <div class="relative group">
+                <button class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">
+                    ✨ Atmosphere & Energy <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+                <div class="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-50 min-w-[220px]">
+                    <button onclick="setCategory('speakeasy', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🍸 Speakeasy & Intimate</button>
+                    <button onclick="setCategory('rooftop', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌆 Rooftop & Skyline Views</button>
+                    <button onclick="setCategory('outdoor-nature', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌿 Nature & Outdoor</button>
+                    <button onclick="setCategory('street-night', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌙 Late Night & Street</button>
+                </div>
+            </div>
+
+            <!-- Main Category 2: Aesthetic & Features -->
+            <div class="relative group">
+                <button class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">
+                    🎨 Aesthetic & Features <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+                <div class="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-50 min-w-[200px]">
+                    <button onclick="setCategory('instagrammable', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">📸 Instagrammable</button>
+                    <button onclick="setCategory('halal-aesthetic', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">✨ Halal Aesthetic</button>
+                    <button onclick="setCategory('pet-friendly', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🐾 Pet Friendly</button>
+                </div>
+            </div>
 
             <div class="h-4 w-px bg-slate-200 mx-1"></div>
 
-            <!-- Aesthetic & Features Subcategories -->
-            <button onclick="setCategory('instagrammable')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
-            <button onclick="setCategory('halal-aesthetic')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">✨ Halal Aesthetic</button>
-            <button onclick="setCategory('pet-friendly')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
+            <!-- Direct Sub-category Shortcut Pills -->
+            <button onclick="setCategory('rooftop', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌆 Rooftop</button>
+            <button onclick="setCategory('pet-friendly', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
+            <button onclick="setCategory('speakeasy', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasies</button>
+            <button onclick="setCategory('instagrammable', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
         </div>
     </header>
 
@@ -541,14 +561,17 @@
             lucide.createIcons();
         }
 
-        function setCategory(cat) {
+        function setCategory(cat, e) {
             currentCat = cat;
             document.querySelectorAll('.cat-btn').forEach(btn => {
                 btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
                 btn.classList.add('bg-white', 'text-slate-600');
             });
-            event.target.classList.remove('bg-white', 'text-slate-600');
-            event.target.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+
+            if (e && e.currentTarget) {
+                e.currentTarget.classList.remove('bg-white', 'text-slate-600');
+                e.currentTarget.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+            }
             renderGrid();
         }
 

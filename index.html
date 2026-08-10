@@ -102,11 +102,10 @@
     </main>
 
     <script>
-        // Google Sheet ID
+        // Official Google Visualization API URL
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
-        // Approximate Lat/Lng coordinates for common KL regions
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
             "petaling street": [3.1439, 101.6974],
@@ -146,7 +145,6 @@
             "pavilion / empire subang": [3.0820, 101.5822],
             "section 17": [3.1250, 101.6350],
             "avenue k / sunway": [3.1594, 101.7136],
-            "pj old town": [3.0872, 101.6461],
             "klcc view": [3.1579, 101.7116],
             "jalan ampang": [3.1585, 101.7150],
             "kampung baru": [3.1619, 101.7031],
@@ -176,13 +174,9 @@
         let mapMarkers = [];
         let isMapVisible = false;
 
-        // Initialize Leaflet Map
         function initMap() {
             if (map) return;
-            
-            // Centered on Kuala Lumpur
             map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
-            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors'
@@ -192,14 +186,12 @@
         function updateMapMarkers(items) {
             if (!map) initMap();
 
-            // Clear old markers
             mapMarkers.forEach(marker => map.removeLayer(marker));
             mapMarkers = [];
 
             items.forEach(item => {
                 const areaKey = (item.area || '').toLowerCase().trim();
                 const coords = areaCoordinates[areaKey] || [3.1390 + (Math.random() - 0.5) * 0.05, 101.6869 + (Math.random() - 0.5) * 0.05];
-
                 const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
 
                 const popupContent = `
@@ -226,7 +218,7 @@
                 mapSec.classList.remove('hidden');
                 toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Grid View`;
                 initMap();
-                setTimeout(() => map.invalidateSize(), 200); // Fix map rendering dimensions
+                setTimeout(() => map.invalidateSize(), 200);
             } else {
                 mapSec.classList.add('hidden');
                 toggleBtn.innerHTML = `<i data-lucide="map" class="w-4 h-4"></i> Map View`;
@@ -237,16 +229,31 @@
         async function fetchSheetData() {
             try {
                 const response = await fetch(SHEET_URL);
-                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                const text = await response.text();
                 
-                restaurants = await response.json();
+                // Parse Google Visualization JSON payload
+                const jsonData = JSON.parse(text.substring(47, text.length - 2));
+                const cols = jsonData.table.cols.map(col => col.label ? col.label.toLowerCase() : '');
+                const rows = jsonData.table.rows;
+
+                restaurants = rows.map(row => {
+                    let item = {};
+                    row.c.forEach((cell, idx) => {
+                        const key = cols[idx];
+                        if (key) {
+                            item[key] = cell ? (cell.v || '') : '';
+                        }
+                    });
+                    return item;
+                });
+
                 renderGrid();
             } catch (err) {
                 console.error("Error fetching Google Sheet data:", err);
                 document.getElementById('pinContainer').innerHTML = `
                     <div class="col-span-full py-16 text-center text-rose-500">
                         <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-2">Make sure Google Sheet sharing is set to "Anyone with the link can view".</p>
+                        <p class="text-xs text-slate-400 mt-2">Ensure Google Sheet sharing is set to "Anyone with the link can view".</p>
                     </div>`;
             }
         }
@@ -264,7 +271,6 @@
                 return matchCat && matchSearch;
             });
 
-            // Update map pins to match search/category filters
             updateMapMarkers(filtered);
 
             if (filtered.length === 0) {
@@ -331,7 +337,6 @@
             renderGrid();
         }
 
-        // Initialize Page
         fetchSheetData();
     </script>
 </body>

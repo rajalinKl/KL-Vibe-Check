@@ -69,7 +69,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
 
-    <!-- Header & Navigation -->
+    <!-- Header Navigation -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
@@ -98,50 +98,67 @@
                 </button>
             </div>
         </div>
-
-        <!-- Category Dropdowns & Filter Bar -->
-        <div class="max-w-7xl mx-auto mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold">
-            <button onclick="setCategory('all', event)" class="cat-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">All Vibes</button>
-            
-            <div class="h-4 w-px bg-slate-200 mx-1"></div>
-
-            <!-- Main Category 1: Atmosphere & Energy -->
-            <div class="relative group">
-                <button class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">
-                    ✨ Atmosphere & Energy <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-                </button>
-                <div class="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-50 min-w-[220px]">
-                    <button onclick="setCategory('speakeasy', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🍸 Speakeasy & Intimate</button>
-                    <button onclick="setCategory('rooftop', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌆 Rooftop & Skyline Views</button>
-                    <button onclick="setCategory('outdoor-nature', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌿 Nature & Outdoor</button>
-                    <button onclick="setCategory('street-night', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🌙 Late Night & Street</button>
-                </div>
-            </div>
-
-            <!-- Main Category 2: Aesthetic & Features -->
-            <div class="relative group">
-                <button class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">
-                    🎨 Aesthetic & Features <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-                </button>
-                <div class="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-50 min-w-[200px]">
-                    <button onclick="setCategory('instagrammable', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">📸 Instagrammable</button>
-                    <button onclick="setCategory('halal-aesthetic', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">✨ Halal Aesthetic</button>
-                    <button onclick="setCategory('pet-friendly', event)" class="cat-btn text-left text-xs font-semibold px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 transition">🐾 Pet Friendly</button>
-                </div>
-            </div>
-
-            <div class="h-4 w-px bg-slate-200 mx-1"></div>
-
-            <!-- Direct Sub-category Shortcut Pills -->
-            <button onclick="setCategory('rooftop', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌆 Rooftop</button>
-            <button onclick="setCategory('pet-friendly', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
-            <button onclick="setCategory('speakeasy', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasies</button>
-            <button onclick="setCategory('instagrammable', event)" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-3.5 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
-        </div>
     </header>
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-10">
+
+        <!-- LEVEL 1: Core Homepage Vibe Hubs -->
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Explore by Vibe Hub</h2>
+                    <p class="text-xs text-slate-500">Pick an atmosphere to discover curated spots across KL</p>
+                </div>
+                <button onclick="setCategory('all')" id="resetHubBtn" class="text-xs font-bold text-rose-500 hover:underline">Show All Vibes</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Hub 1 -->
+                <div onclick="setCategory('speakeasy')" class="hub-card cursor-pointer group relative bg-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-800">
+                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🍸</div>
+                    <p class="text-2xl mb-2">🍸</p>
+                    <h3 class="text-base font-bold text-white leading-snug">Speakeasies & Mood</h3>
+                    <p class="text-xs text-slate-400 mt-1">Intimate, low-light, dates & hidden bars</p>
+                </div>
+
+                <!-- Hub 2 -->
+                <div onclick="setCategory('rooftop')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-900/50">
+                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌆</div>
+                    <p class="text-2xl mb-2">🌆</p>
+                    <h3 class="text-base font-bold text-white leading-snug">Rooftops & Views</h3>
+                    <p class="text-xs text-slate-300 mt-1">Skylines, sunset drinks & high energy</p>
+                </div>
+
+                <!-- Hub 3 -->
+                <div onclick="setCategory('outdoor-nature')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-emerald-900/50">
+                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌿</div>
+                    <p class="text-2xl mb-2">🌿</p>
+                    <h3 class="text-base font-bold text-white leading-snug">Outdoor & Nature</h3>
+                    <p class="text-xs text-emerald-200 mt-1">Garden cafes, alfresco & lush greenery</p>
+                </div>
+
+                <!-- Hub 4 -->
+                <div onclick="setCategory('street-night')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-amber-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-900/50">
+                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌙</div>
+                    <p class="text-2xl mb-2">🌙</p>
+                    <h3 class="text-base font-bold text-white leading-snug">Late Night & Street Eats</h3>
+                    <p class="text-xs text-amber-200 mt-1">Night markets & post-midnight cravings</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: Practical Feature Tags (Filters) -->
+        <section class="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Practical Feature Filters:</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="toggleFeature('instagrammable')" id="tag-instagrammable" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">📸 Instagrammable</button>
+                <button onclick="toggleFeature('halal-aesthetic')" id="tag-halal-aesthetic" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">✨ Halal Aesthetic</button>
+                <button onclick="toggleFeature('pet-friendly')" id="tag-pet-friendly" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">🐾 Pet-Friendly</button>
+            </div>
+        </section>
+
+        <!-- Interactive Map Section -->
         <section id="mapSection" class="hidden">
             <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
                 <div id="mapContainer"></div>
@@ -194,21 +211,14 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vibe Category</label>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Core Vibe Hub</label>
                         <select name="vibe_category" id="vibe-select" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                            <option value="" disabled selected>Select a Vibe / Atmosphere...</option>
-                            
-                            <optgroup label="Atmosphere & Energy">
-                                <option value="speakeasy">🍸 Speakeasy & Intimate</option>
-                                <option value="rooftop">🌆 Rooftop & Skyline Views</option>
-                                <option value="outdoor-nature">🌿 Nature & Outdoor</option>
-                                <option value="street-night">🌙 Late Night & Street</option>
-                            </optgroup>
-                            
-                            <optgroup label="Aesthetic & Features">
-                                <option value="instagrammable">📸 Instagrammable</option>
-                                <option value="halal-aesthetic">✨ Halal Aesthetic</option>
-                                <option value="pet-friendly">🐾 Pet Friendly</option>
+                            <option value="" disabled selected>Select Core Hub...</option>
+                            <optgroup label="Core Homepage Vibe Hubs">
+                                <option value="speakeasy">🍸 Speakeasies & Mood</option>
+                                <option value="rooftop">🌆 Rooftops & Views</option>
+                                <option value="outdoor-nature">🌿 Outdoor & Nature</option>
+                                <option value="street-night">🌙 Late Night & Street Eats</option>
                             </optgroup>
                         </select>
                     </div>
@@ -303,7 +313,8 @@
         };
 
         let restaurants = [];
-        let currentCat = 'all';
+        let currentHub = 'all';
+        let activeFeatures = [];
         let map = null;
         let mapMarkers = [];
         let isMapVisible = false;
@@ -515,20 +526,24 @@
             const filtered = restaurants.filter(item => {
                 const cats = (item.cat || '').toLowerCase().split(',').map(c => c.trim());
                 
-                let matchCat = (currentCat === 'all');
-                if (!matchCat) {
-                    if (currentCat === 'rooftop') {
-                        matchCat = cats.some(c => c.includes('rooftop'));
-                    } else {
-                        matchCat = cats.includes(currentCat.toLowerCase());
-                    }
+                // Match Core Hub
+                let matchHub = (currentHub === 'all');
+                if (!matchHub) {
+                    matchHub = cats.some(c => c.includes(currentHub));
+                }
+
+                // Match Practical Features
+                let matchFeatures = true;
+                if (activeFeatures.length > 0) {
+                    matchFeatures = activeFeatures.every(feat => cats.some(c => c.includes(feat)));
                 }
 
                 const matchSearch = (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
                                     (item.desc || '').toLowerCase().includes(query) ||
                                     (item.tag || '').toLowerCase().includes(query);
-                return matchCat && matchSearch;
+
+                return matchHub && matchFeatures && matchSearch;
             });
 
             updateMapMarkers(filtered);
@@ -561,17 +576,25 @@
             lucide.createIcons();
         }
 
-        function setCategory(cat, e) {
-            currentCat = cat;
-            document.querySelectorAll('.cat-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
-                btn.classList.add('bg-white', 'text-slate-600');
-            });
+        function setCategory(hub) {
+            currentHub = hub;
+            renderGrid();
+        }
 
-            if (e && e.currentTarget) {
-                e.currentTarget.classList.remove('bg-white', 'text-slate-600');
-                e.currentTarget.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+        function toggleFeature(feature) {
+            const index = activeFeatures.indexOf(feature);
+            const btn = document.getElementById(`tag-${feature}`);
+
+            if (index > -1) {
+                activeFeatures.splice(index, 1);
+                btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-500');
+                btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+            } else {
+                activeFeatures.push(feature);
+                btn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+                btn.classList.add('bg-rose-500', 'text-white', 'border-rose-500');
             }
+
             renderGrid();
         }
 

@@ -19,11 +19,12 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
+        /* Pinterest Staggered Masonry Layout */
         .pin-grid {
             column-count: 1;
             column-gap: 1.25rem;
         }
-        @media (min-width: 640px) { .pin-grid { column-count: 2; } }
+        @media (min-width: 640px)  { .pin-grid { column-count: 2; } }
         @media (min-width: 1024px) { .pin-grid { column-count: 3; } }
         @media (min-width: 1280px) { .pin-grid { column-count: 4; } }
         
@@ -43,13 +44,13 @@
             width: 36px;
             height: 36px;
             border-radius: 50% 50% 50% 0;
-            background: #2563EB;
+            background: #E11D48;
             position: absolute;
             transform: rotate(-45deg);
             left: 50%;
             top: 50%;
             margin: -20px 0 0 -18px;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -69,57 +70,70 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
+<body class="bg-slate-100 text-slate-800 antialiased selection:bg-rose-500 selection:text-white min-h-screen">
 
     <!-- Header & Navigation -->
-    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3.5 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
-            <div class="flex items-center gap-2 cursor-pointer" onclick="resetFilters()">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="resetFilters()">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
                     <i data-lucide="compass" class="w-5 h-5"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight text-slate-900">KL Vibe Check</h1>
-                    <p class="text-xs text-slate-500 font-medium">Curated Kuala Lumpur Dining & Map Locator</p>
+                    <p class="text-xs text-slate-500 font-medium">Visual Board for Kuala Lumpur Dining</p>
                 </div>
             </div>
 
             <div class="w-full md:w-auto flex flex-wrap items-center gap-2 md:gap-3">
-                <div class="relative flex-1 md:w-64">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
+                <div class="relative flex-1 md:w-72">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search aesthetic spots, vibes, areas..." class="w-full pl-10 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition shadow-inner">
                 </div>
 
-                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
+                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="map" class="w-4 h-4"></i> Map View
                 </button>
 
-                <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
+                <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest Spot
                 </button>
             </div>
         </div>
 
         <!-- Dynamic Level 1 Category Bar -->
-        <div class="max-w-7xl mx-auto mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold" id="catL1Container">
+        <div class="max-w-7xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold" id="catL1Container">
             <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">
-                All Vibes
+                All Pins
             </button>
             <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
-            <!-- Dynamic L1 categories render here -->
         </div>
 
-        <!-- Dynamic Level 2 Sub-Filter Bar (Visible when L1 is selected) -->
+        <!-- Dynamic Level 2 Sub-Filter Bar -->
         <div id="catL2Wrapper" class="max-w-7xl mx-auto mt-2 hidden transition-all duration-300">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium bg-slate-100/70 p-1.5 rounded-2xl border border-slate-200/50" id="catL2Container">
-                <!-- Dynamic L2 sub-categories render here -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60" id="catL2Container">
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-10">
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
+        <!-- Error Banner -->
+        <div id="errorBanner" class="hidden bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 text-sm">
+            <div class="flex items-center gap-2 font-bold mb-1">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i> Unable to load Google Sheet data
+            </div>
+            <p id="errorMessage" class="text-xs text-rose-600">Please check your internet connection or Google Sheet sharing permissions.</p>
+        </div>
+
+        <!-- Loading Skeleton / Spinner -->
+        <div id="loadingState" class="py-24 text-center text-slate-400">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-rose-500 mb-3"></div>
+            <p class="text-sm font-semibold text-slate-600">Curating Pinterest Board...</p>
+        </div>
+
+        <!-- Interactive Map Section -->
         <section id="mapSection" class="hidden">
             <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
                 <div id="mapContainer"></div>
@@ -127,29 +141,65 @@
         </section>
 
         <!-- Indoor Seating Section -->
-        <section id="indoorSection">
+        <section id="indoorSection" class="hidden">
             <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-xl font-bold text-slate-900">🏠 Indoor Seating Only</h2>
-                <span id="indoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+                <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    🏠 Indoor Vibes <span id="indoorCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
+                </h2>
             </div>
             <div id="indoorContainer" class="pin-grid"></div>
         </section>
 
         <!-- Outdoor Seating Section -->
-        <section id="outdoorSection">
+        <section id="outdoorSection" class="hidden">
             <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-xl font-bold text-slate-900">🌿 Outdoor / Alfresco Seating Available</h2>
-                <span id="outdoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+                <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    🌿 Outdoor & Alfresco <span id="outdoorCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
+                </h2>
             </div>
             <div id="outdoorContainer" class="pin-grid"></div>
         </section>
 
-        <div id="noResults" class="hidden py-16 text-center text-slate-400">
+        <div id="noResults" class="hidden py-20 text-center text-slate-400">
             <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-            <p class="text-lg font-medium">No dining spots found matching your filter selection.</p>
-            <button onclick="resetFilters()" class="mt-3 text-xs font-bold text-rose-500 hover:underline">Clear all filters</button>
+            <p class="text-lg font-medium text-slate-600">No spots found matching your filter selection.</p>
+            <button onclick="resetFilters()" class="mt-3 text-xs font-bold bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition shadow-sm">Clear Filters</button>
         </div>
     </main>
+
+    <!-- Pinterest-Style Image Lightbox Modal -->
+    <div id="pinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden transition-opacity" onclick="closePinModal(event)">
+        <div class="bg-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-2 max-h-[85vh]" onclick="event.stopPropagation()">
+            <div class="relative bg-slate-900 flex items-center justify-center overflow-hidden min-h-[280px]">
+                <img id="modalImg" src="" alt="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
+            </div>
+            <div class="p-6 flex flex-col justify-between bg-white overflow-y-auto">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span id="modalCategory" class="bg-rose-50 text-rose-600 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Category</span>
+                        <button onclick="closePinModal()" class="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <h2 id="modalTitle" class="text-2xl font-extrabold text-slate-900 leading-tight mb-2">Spot Name</h2>
+                    <p id="modalArea" class="text-xs font-semibold text-slate-500 flex items-center gap-1 mb-4">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> <span>Area</span>
+                    </p>
+                    <p id="modalDesc" class="text-sm text-slate-600 leading-relaxed font-normal mb-6">Description goes here...</p>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center gap-3">
+                    <button id="modalBookmarkBtn" onclick="toggleSaveSpot(event)" class="flex-1 border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold py-2.5 rounded-2xl text-xs transition flex items-center justify-center gap-2">
+                        <i data-lucide="bookmark" class="w-4 h-4"></i> Save Spot
+                    </button>
+                    <a id="modalMapLink" href="#" target="_blank" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs transition text-center shadow-md shadow-rose-500/20 flex items-center justify-center gap-2">
+                        Get Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Suggest Spot Modal -->
     <div id="suggestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
@@ -209,6 +259,14 @@
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
 
+        const FALLBACK_IMAGES = [
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop'
+        ];
+
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
             "petaling street": [3.1439, 101.6974],
@@ -228,48 +286,17 @@
             "taman oug": [3.0736, 101.6719],
             "kelana jaya": [3.1022, 101.5975],
             "ampang": [3.1500, 101.7600],
-            "ldp ss7": [3.0988, 101.5950],
             "sungai penchala": [3.1622, 101.6250],
             "1-altitude kl": [3.1579, 101.7116],
-            "bukit lanjan": [3.1700, 101.6100],
-            "janda baik / outskirts": [3.3167, 101.8667],
-            "kajang": [2.9935, 101.7874],
-            "batang kali": [3.4684, 101.6392],
-            "semenyih": [2.9481, 101.8465],
-            "linc kl / bangsar": [3.1570, 101.7190],
-            "damansara": [3.1500, 101.6200],
             "klcc": [3.1579, 101.7116],
-            "klcc view": [3.1579, 101.7116],
-            "mahsa avenue": [3.1188, 101.6521],
-            "kl city": [3.1466, 101.6958],
-            "kuala lumpur": [3.1390, 101.6869],
-            "bukit ceylon": [3.1492, 101.7042],
-            "pavilion / empire subang": [3.0820, 101.5822],
-            "section 17": [3.1250, 101.6350],
-            "avenue k / sunway": [3.1594, 101.7136],
-            "jalan ampang": [3.1585, 101.7150],
-            "kampung baru": [3.1619, 101.7031],
-            "brickfields": [3.1292, 101.6838],
-            "ss2 / bukit jalil": [3.1188, 101.6231],
-            "the five, bukit damansara": [3.1500, 101.6620],
-            "bukit damansara": [3.1500, 101.6620],
-            "passer seni / kl": [3.1425, 101.6955],
-            "publika": [3.1708, 101.6658],
-            "ara damansara": [3.1283, 101.5783],
-            "titiwangsa": [3.1800, 101.7000],
-            "cybersouth": [2.8800, 101.6500],
-            "jalan raja chulan": [3.1500, 101.7080],
-            "bangsar shopping centre": [3.1430, 101.6670],
-            "avenue k": [3.1594, 101.7136],
-            "plaza damansara": [3.1520, 101.6530],
-            "jalan sultan": [3.1428, 101.6983],
-            "jalan sultan ismail": [3.1580, 101.7030]
+            "bukit damansara": [3.1500, 101.6620]
         };
 
         let restaurants = [];
-        let categoryHierarchy = {}; // Maps cat_l1 -> Set of cat_l2
+        let categoryHierarchy = {};
         let selectedCatL1 = 'all';
         let selectedCatL2 = 'all';
+        let savedSpots = new Set();
         
         let map = null;
         let mapMarkers = [];
@@ -365,10 +392,10 @@
 
                 const popupContent = `
                     <div style="width: 180px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                        <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
+                        <img src="${item.img || FALLBACK_IMAGES[0]}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
                         <span style="font-size: 10px; font-weight: bold; color: #E11D48; text-transform: uppercase;">${item.area || 'KL'}</span>
                         <h4 style="font-size: 13px; font-weight: bold; margin: 2px 0 4px 0; color: #0F172A;">${item.name}</h4>
-                        <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #F43F5E; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
+                        <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #E11D48; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
                     </div>
                 `;
 
@@ -386,7 +413,7 @@
 
             if (isMapVisible) {
                 mapSec.classList.remove('hidden');
-                toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Grid View`;
+                toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Board View`;
                 initMap();
                 setTimeout(() => map.invalidateSize(), 200);
             } else {
@@ -397,37 +424,44 @@
         }
 
         async function fetchSheetData() {
+            const loadingState = document.getElementById('loadingState');
+            const errorBanner = document.getElementById('errorBanner');
+            
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                if (!response.ok) throw new Error(`HTTP Error ${response.status}. Please ensure sheet is shared publicly.`);
                 
                 const rawData = await response.json();
+                
+                if (!Array.isArray(rawData) || rawData.length === 0) {
+                    throw new Error("Sheet returned empty data.");
+                }
+
                 categoryHierarchy = {};
 
-                restaurants = rawData.map(row => {
+                restaurants = rawData.map((row, idx) => {
                     let cleanItem = {};
 
-                    // Normalize key names (handling lowercase, spaces, cat_l1 vs cat_l2)
                     Object.keys(row).forEach(key => {
-                        const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+                        const cleanKey = key.trim().toLowerCase().replace(/[\s\-_]+/g, '_');
                         let val = row[key] ? String(row[key]).trim() : '';
                         cleanItem[cleanKey] = val;
                     });
 
-                    // Flexible key mapping for cat_l1 and cat_l2
-                    const l1 = cleanItem.cat_l1 || cleanItem.catl1 || cleanItem.cat1 || cleanItem.cat || '';
+                    const l1 = cleanItem.cat_l1 || cleanItem.catl1 || cleanItem.cat1 || cleanItem.cat || 'Curated Vibes';
                     const l2 = cleanItem.cat_l2 || cleanItem.catl2 || cleanItem.cat2 || cleanItem.tag || '';
 
+                    cleanItem.id = idx;
+                    cleanItem.name = cleanItem.name || cleanItem.place_name || '';
                     cleanItem.cat_l1 = l1;
                     cleanItem.cat_l2 = l2;
+                    cleanItem.img = cleanItem.img || FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length];
 
-                    // Build Category Tree Structure
                     if (l1) {
                         if (!categoryHierarchy[l1]) {
                             categoryHierarchy[l1] = new Set();
                         }
                         if (l2) {
-                            // Split comma-separated L2 values if applicable
                             l2.split(',').forEach(sub => categoryHierarchy[l1].add(sub.trim()));
                         }
                     }
@@ -435,25 +469,27 @@
                     return cleanItem;
                 }).filter(item => item.name);
 
+                loadingState.classList.add('hidden');
                 buildCategoryUI();
                 renderGrid();
             } catch (err) {
                 console.error("Error fetching Google Sheet data:", err);
+                loadingState.classList.add('hidden');
+                errorBanner.classList.remove('hidden');
+                document.getElementById('errorMessage').innerText = err.message;
             }
         }
 
         function buildCategoryUI() {
             const catL1Container = document.getElementById('catL1Container');
             
-            // Retain 'All Vibes' button
             catL1Container.innerHTML = `
                 <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">
-                    All Vibes
+                    All Pins
                 </button>
                 <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
             `;
 
-            // Append dynamic Level 1 buttons
             Object.keys(categoryHierarchy).sort().forEach(l1Cat => {
                 const btn = document.createElement('button');
                 btn.id = `btn-catl1-${slugify(l1Cat)}`;
@@ -466,9 +502,8 @@
 
         function selectCatL1(l1Cat) {
             selectedCatL1 = l1Cat;
-            selectedCatL2 = 'all'; // Reset L2 selection when L1 changes
+            selectedCatL2 = 'all';
 
-            // Update L1 Button styles
             document.querySelectorAll('.cat-l1-btn').forEach(btn => {
                 btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
                 btn.classList.add('bg-white', 'text-slate-800');
@@ -480,7 +515,6 @@
                 activeBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
             }
 
-            // Render corresponding L2 buttons
             renderCatL2Bar();
             renderGrid();
         }
@@ -521,7 +555,6 @@
         function selectCatL2(l2Cat) {
             selectedCatL2 = l2Cat;
 
-            // Update L2 Button styles
             document.querySelectorAll('.cat-l2-btn').forEach(btn => {
                 btn.classList.remove('bg-slate-800', 'text-white');
                 btn.classList.add('bg-white', 'text-slate-700');
@@ -536,41 +569,85 @@
             renderGrid();
         }
 
+        /* Pinterest-Style Pin Card Generation */
         function createCard(item) {
             const card = document.createElement('div');
-            card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1";
+            card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer";
             
             const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
             const displayBadge = item.cat_l2 || item.cat_l1 || item.tag || 'Food Spot';
 
+            card.onclick = () => openPinModal(item);
+
             card.innerHTML = `
-                <div class="relative overflow-hidden aspect-[4/5] bg-slate-100 cursor-pointer" onclick="window.open('${gmapsUrl}', '_blank')">
-                    <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
+                <div class="relative overflow-hidden bg-slate-100">
+                    <img src="${item.img}" alt="${item.name}" 
+                         onerror="this.src='${FALLBACK_IMAGES[0]}'" 
+                         class="w-full h-auto object-cover group-hover:scale-105 transition duration-500 rounded-3xl">
                     
-                    <div class="absolute top-3 left-3 flex gap-2 max-w-[70%] flex-wrap">
-                        <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm truncate">${displayBadge}</span>
+                    <!-- Top Hover Overlay Action Bar (Pinterest Save Button) -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-3.5 flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-black/50 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20 tracking-wider uppercase">${displayBadge}</span>
+                            <button onclick="toggleSaveSpot(event, ${item.id})" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg transition flex items-center gap-1">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <p class="text-[11px] font-extrabold text-rose-300 uppercase tracking-widest mb-0.5">${item.area || 'Kuala Lumpur'}</p>
+                            <h3 class="text-base font-extrabold text-white leading-tight mb-1">${item.name}</h3>
+                            <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+                        </div>
                     </div>
 
-                    <div class="absolute top-3 right-3">
-                        <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-                    </div>
-
-                    <div class="absolute bottom-0 inset-x-0 p-4 text-white">
-                        <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
-                        <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
-                        <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+                    <!-- Static Price Tag (Visible always) -->
+                    <div class="absolute top-3 right-3 group-hover:opacity-0 transition-opacity">
+                        <span class="bg-slate-900/70 backdrop-blur-md text-emerald-400 text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
                     </div>
                 </div>
-                
-                <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
-                    <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area || 'KL'}</span>
-                    <a href="${gmapsUrl}" target="_blank" class="flex items-center gap-1 text-rose-500 font-bold hover:underline">
-                        Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+
+                <!-- Pin Footer Info -->
+                <div class="p-3.5 bg-white flex items-center justify-between text-xs border-t border-slate-100">
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm leading-tight">${item.name}</h4>
+                        <span class="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5"><i data-lucide="map-pin" class="w-3 h-3 text-rose-500"></i> ${item.area || 'KL'}</span>
+                    </div>
+                    <a href="${gmapsUrl}" target="_blank" onclick="event.stopPropagation()" class="p-2 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 rounded-full transition shadow-sm">
+                        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
                     </a>
                 </div>
             `;
             return card;
+        }
+
+        /* Lightbox Modal Functions */
+        function openPinModal(item) {
+            const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
+            
+            document.getElementById('modalImg').src = item.img;
+            document.getElementById('modalTitle').innerText = item.name;
+            document.getElementById('modalArea').querySelector('span').innerText = item.area || 'Kuala Lumpur';
+            document.getElementById('modalCategory').innerText = item.cat_l2 || item.cat_l1 || 'Featured Spot';
+            document.getElementById('modalDesc').innerText = item.desc || 'No detailed description available.';
+            document.getElementById('modalMapLink').href = gmapsUrl;
+
+            document.getElementById('pinModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closePinModal(e) {
+            document.getElementById('pinModal').classList.add('hidden');
+        }
+
+        function toggleSaveSpot(e, id) {
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            btn.classList.toggle('bg-emerald-600');
+            btn.innerHTML = btn.classList.contains('bg-emerald-600') 
+                ? `<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved` 
+                : `<i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save`;
+            lucide.createIcons();
         }
 
         function renderGrid() {
@@ -586,13 +663,9 @@
             outdoorContainer.innerHTML = '';
 
             const filtered = restaurants.filter(item => {
-                // Match Cat L1
                 let matchL1 = (selectedCatL1 === 'all') || (item.cat_l1.toLowerCase() === selectedCatL1.toLowerCase());
-
-                // Match Cat L2
                 let matchL2 = (selectedCatL2 === 'all') || (item.cat_l2.toLowerCase().includes(selectedCatL2.toLowerCase()));
 
-                // Match Search Input
                 const matchSearch = !query || 
                                     (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
@@ -626,9 +699,9 @@
             document.getElementById('indoorCount').innerText = indoorCount;
             document.getElementById('outdoorCount').innerText = outdoorCount;
 
-            indoorSection.style.display = indoorCount > 0 ? 'block' : 'none';
-            outdoorSection.style.display = outdoorCount > 0 ? 'block' : 'none';
-            noResults.style.display = (indoorCount === 0 && outdoorCount === 0) ? 'block' : 'none';
+            indoorSection.classList.toggle('hidden', indoorCount === 0);
+            outdoorSection.classList.toggle('hidden', outdoorCount === 0);
+            noResults.classList.toggle('hidden', indoorCount > 0 || outdoorCount > 0);
 
             lucide.createIcons();
         }

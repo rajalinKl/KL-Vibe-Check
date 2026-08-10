@@ -104,8 +104,6 @@
     <script>
         // Google Sheet ID
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        
-        // CSV URL routed through a free CORS proxy to prevent browser blocking
         const DIRECT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const FETCH_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(DIRECT_CSV_URL)}`;
 
@@ -128,8 +126,6 @@
             "taman oug": [3.0736, 101.6719],
             "kelana jaya": [3.1022, 101.5975],
             "ampang": [3.1500, 101.7600],
-            "ampang reserve": [3.1520, 101.7700],
-            "ampang hills": [3.1550, 101.7750],
             "ldp ss7": [3.0988, 101.5950],
             "sungai penchala": [3.1622, 101.6250],
             "1-altitude kl": [3.1579, 101.7116],
@@ -148,7 +144,6 @@
             "pavilion / empire subang": [3.0820, 101.5822],
             "section 17": [3.1250, 101.6350],
             "avenue k / sunway": [3.1594, 101.7136],
-            "klcc view": [3.1579, 101.7116],
             "jalan ampang": [3.1585, 101.7150],
             "kampung baru": [3.1619, 101.7031],
             "brickfields": [3.1292, 101.6838],
@@ -156,11 +151,7 @@
             "the five, bukit damansara": [3.1500, 101.6620],
             "bukit damansara": [3.1500, 101.6620],
             "passer seni / kl": [3.1425, 101.6955],
-            "jaland tun razak": [3.1700, 101.7200],
             "publika": [3.1708, 101.6658],
-            "plaza tuah 1895": [3.1411, 101.7088],
-            "sin chew kee road": [3.1422, 101.7060],
-            "section 17, pj": [3.1250, 101.6350],
             "ara damansara": [3.1283, 101.5783],
             "titiwangsa": [3.1800, 101.7000],
             "cybersouth": [2.8800, 101.6500],
@@ -177,42 +168,40 @@
         let mapMarkers = [];
         let isMapVisible = false;
 
-        // Custom CSV Parser
-        function parseCSV(csvText) {
-            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) return [];
-
-            function parseLine(text) {
-                const result = [];
-                let cur = '';
-                let inQuotes = false;
-                for (let i = 0; i < text.length; i++) {
-                    const char = text[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(cur.trim());
-                        cur = '';
-                    } else {
-                        cur += char;
-                    }
+        // Robust CSV Parser handling quotes, commas, and linebreaks
+        function parseCSV(text) {
+            let p = '', c = '', r = [];
+            let q = false;
+            let row = [''];
+            for (let i = 0; i < text.length; i++) {
+                c = text[i];
+                p = text[i - 1];
+                if (c === '"') {
+                    if (q && text[i + 1] === '"') { row[row.length - 1] += '"'; i++; }
+                    else { q = !q; }
+                } else if (c === ',' && !q) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !q) {
+                    if (c === '\r' && text[i + 1] === '\n') { i++; }
+                    r.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
                 }
-                result.push(cur.trim());
-                return result;
             }
+            if (row.length > 1 || row[0] !== '') { r.push(row); }
+            if (r.length < 2) return [];
 
-            const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/^"|"$/g, ''));
-            const items = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const values = parseLine(lines[i]).map(v => v.replace(/^"|"$/g, ''));
+            const headers = r[0].map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+            return r.slice(1).map(rowValues => {
                 let obj = {};
                 headers.forEach((h, idx) => {
-                    obj[h] = values[idx] || '';
+                    let val = (rowValues[idx] || '').trim().replace(/^"|"$/g, '');
+                    if (h === 'cat') val = val.toLowerCase();
+                    obj[h] = val;
                 });
-                if (obj.name) items.push(obj);
-            }
-            return items;
+                return obj;
+            }).filter(item => item.name);
         }
 
         function initMap() {
@@ -276,7 +265,7 @@
                 restaurants = parseCSV(csvText);
 
                 if (restaurants.length === 0) {
-                    throw new Error("No items found in Sheet CSV");
+                    throw new Error("No valid rows parsed from Google Sheet");
                 }
                 
                 renderGrid();
@@ -285,18 +274,19 @@
                 document.getElementById('pinContainer').innerHTML = `
                     <div class="col-span-full py-16 text-center text-rose-500">
                         <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-2">1. Check that Google Sheet sharing is set to "Anyone with the link can view".<br>2. Make sure row 1 contains headers: name, cat, area, price, tag, img, desc.</p>
+                        <p class="text-xs text-slate-400 mt-2">Check that Google Sheet sharing is set to "Anyone with the link can view".</p>
                     </div>`;
             }
         }
 
         function renderGrid() {
             const container = document.getElementById('pinContainer');
-            const query = document.getElementById('searchInput').value.toLowerCase();
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
             container.innerHTML = '';
 
             const filtered = restaurants.filter(item => {
-                const matchCat = (currentCat === 'all' || item.cat === currentCat);
+                const itemCat = (item.cat || '').toLowerCase().trim();
+                const matchCat = (currentCat === 'all' || itemCat === currentCat.toLowerCase());
                 const matchSearch = (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
                                     (item.desc || '').toLowerCase().includes(query);

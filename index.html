@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KL Vibe Check — Dining & Cafe Directory</title>
+    <title>KL Vibe Check — Pinterest Dining Directory</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,7 +19,7 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* Pinterest Staggered Masonry Layout */
+        /* Pinterest Staggered Masonry Grid */
         .pin-grid {
             column-count: 1;
             column-gap: 1.25rem;
@@ -34,7 +34,7 @@
         }
 
         #mapContainer {
-            height: 420px;
+            height: 440px;
             width: 100%;
             border-radius: 1.5rem;
             z-index: 10;
@@ -76,20 +76,29 @@
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3.5 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
+            <!-- Logo / Title -->
             <div class="flex items-center gap-2.5 cursor-pointer" onclick="resetFilters()">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
                     <i data-lucide="compass" class="w-5 h-5"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight text-slate-900">KL Vibe Check</h1>
-                    <p class="text-xs text-slate-500 font-medium">Visual Board for Kuala Lumpur Dining</p>
+                    <p class="text-xs text-slate-500 font-medium">Curated Kuala Lumpur Visual Board</p>
                 </div>
             </div>
 
+            <!-- Controls: Search, Seating Filter & Actions -->
             <div class="w-full md:w-auto flex flex-wrap items-center gap-2 md:gap-3">
-                <div class="relative flex-1 md:w-72">
+                <div class="relative flex-1 md:w-64">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search aesthetic spots, vibes, areas..." class="w-full pl-10 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition shadow-inner">
+                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search spots, food, areas..." class="w-full pl-10 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition shadow-inner">
+                </div>
+
+                <!-- Seating Filter Control -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-full text-xs font-bold border border-slate-200">
+                    <button onclick="setSeatingFilter('all')" id="seat-btn-all" class="seating-btn active bg-slate-900 text-white px-3 py-1.5 rounded-full transition">All</button>
+                    <button onclick="setSeatingFilter('indoor')" id="seat-btn-indoor" class="seating-btn text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full transition">🏠 Indoor</button>
+                    <button onclick="setSeatingFilter('outdoor')" id="seat-btn-outdoor" class="seating-btn text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full transition">🌿 Outdoor</button>
                 </div>
 
                 <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
@@ -97,20 +106,21 @@
                 </button>
 
                 <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest Spot
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest
                 </button>
             </div>
         </div>
 
-        <!-- Dynamic Level 1 Category Bar -->
+        <!-- 5 Main Vibe Bar (Level 1) -->
         <div class="max-w-7xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold" id="catL1Container">
-            <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">
-                All Pins
+            <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm flex-shrink-0">
+                All Vibes
             </button>
             <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
+            <!-- Dynamic Max 5 Vibe Buttons Render Here -->
         </div>
 
-        <!-- Dynamic Level 2 Sub-Filter Bar -->
+        <!-- Level 2 Sub-Filters (Appears when Main Vibe selected) -->
         <div id="catL2Wrapper" class="max-w-7xl mx-auto mt-2 hidden transition-all duration-300">
             <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60" id="catL2Container">
             </div>
@@ -124,10 +134,10 @@
             <div class="flex items-center gap-2 font-bold mb-1">
                 <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i> Unable to load Google Sheet data
             </div>
-            <p id="errorMessage" class="text-xs text-rose-600">Please check your internet connection or Google Sheet sharing permissions.</p>
+            <p id="errorMessage" class="text-xs text-rose-600">Ensure your sheet is set to "Anyone with the link can view".</p>
         </div>
 
-        <!-- Loading Skeleton / Spinner -->
+        <!-- Loading Spinner -->
         <div id="loadingState" class="py-24 text-center text-slate-400">
             <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-rose-500 mb-3"></div>
             <p class="text-sm font-semibold text-slate-600">Curating Pinterest Board...</p>
@@ -140,34 +150,25 @@
             </div>
         </section>
 
-        <!-- Indoor Seating Section -->
-        <section id="indoorSection" class="hidden">
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    🏠 Indoor Vibes <span id="indoorCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
+        <!-- Pinterest Pin Board Section -->
+        <section id="pinBoardSection" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="boardTitle" class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    ✨ Featured Dining Spots
                 </h2>
+                <span id="pinCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1 rounded-full">0 spots</span>
             </div>
-            <div id="indoorContainer" class="pin-grid"></div>
-        </section>
-
-        <!-- Outdoor Seating Section -->
-        <section id="outdoorSection" class="hidden">
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    🌿 Outdoor & Alfresco <span id="outdoorCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
-                </h2>
-            </div>
-            <div id="outdoorContainer" class="pin-grid"></div>
+            <div id="pinContainer" class="pin-grid"></div>
         </section>
 
         <div id="noResults" class="hidden py-20 text-center text-slate-400">
             <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-            <p class="text-lg font-medium text-slate-600">No spots found matching your filter selection.</p>
-            <button onclick="resetFilters()" class="mt-3 text-xs font-bold bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition shadow-sm">Clear Filters</button>
+            <p class="text-lg font-medium text-slate-600">No dining spots found matching your filter selection.</p>
+            <button onclick="resetFilters()" class="mt-3 text-xs font-bold bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition shadow-sm">Clear All Filters</button>
         </div>
     </main>
 
-    <!-- Pinterest-Style Image Lightbox Modal -->
+    <!-- Pinterest Detail Lightbox Modal -->
     <div id="pinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden transition-opacity" onclick="closePinModal(event)">
         <div class="bg-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-2 max-h-[85vh]" onclick="event.stopPropagation()">
             <div class="relative bg-slate-900 flex items-center justify-center overflow-hidden min-h-[280px]">
@@ -183,9 +184,13 @@
                         </button>
                     </div>
                     <h2 id="modalTitle" class="text-2xl font-extrabold text-slate-900 leading-tight mb-2">Spot Name</h2>
-                    <p id="modalArea" class="text-xs font-semibold text-slate-500 flex items-center gap-1 mb-4">
-                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> <span>Area</span>
-                    </p>
+                    
+                    <div class="flex items-center gap-3 text-xs font-semibold text-slate-500 mb-4">
+                        <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> <span id="modalArea">Area</span></span>
+                        <span>•</span>
+                        <span id="modalSeating" class="bg-slate-100 px-2.5 py-0.5 rounded-full text-slate-700">Seating</span>
+                    </div>
+
                     <p id="modalDesc" class="text-sm text-slate-600 leading-relaxed font-normal mb-6">Description goes here...</p>
                 </div>
 
@@ -233,11 +238,6 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Instagram Handle / Link (Optional)</label>
-                    <input type="text" name="social_link" placeholder="e.g. @tonecafe.kl" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                </div>
-
-                <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Why should it be listed?</label>
                     <textarea name="description" rows="2" placeholder="Tell us what makes this spot special..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition"></textarea>
                 </div>
@@ -259,13 +259,7 @@
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
 
-        const FALLBACK_IMAGES = [
-            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop'
-        ];
+        const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop';
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -283,11 +277,6 @@
             "ttdi": [3.1367, 101.6219],
             "kl city centre": [3.1579, 101.7116],
             "damansara jaya": [3.1278, 101.6163],
-            "taman oug": [3.0736, 101.6719],
-            "kelana jaya": [3.1022, 101.5975],
-            "ampang": [3.1500, 101.7600],
-            "sungai penchala": [3.1622, 101.6250],
-            "1-altitude kl": [3.1579, 101.7116],
             "klcc": [3.1579, 101.7116],
             "bukit damansara": [3.1500, 101.6620]
         };
@@ -296,7 +285,7 @@
         let categoryHierarchy = {};
         let selectedCatL1 = 'all';
         let selectedCatL2 = 'all';
-        let savedSpots = new Set();
+        let currentSeatingFilter = 'all';
         
         let map = null;
         let mapMarkers = [];
@@ -392,7 +381,7 @@
 
                 const popupContent = `
                     <div style="width: 180px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                        <img src="${item.img || FALLBACK_IMAGES[0]}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
+                        <img src="${item.img}" onerror="this.src='${FALLBACK_IMAGE}'" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
                         <span style="font-size: 10px; font-weight: bold; color: #E11D48; text-transform: uppercase;">${item.area || 'KL'}</span>
                         <h4 style="font-size: 13px; font-weight: bold; margin: 2px 0 4px 0; color: #0F172A;">${item.name}</h4>
                         <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #E11D48; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
@@ -429,12 +418,12 @@
             
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`HTTP Error ${response.status}. Please ensure sheet is shared publicly.`);
+                if (!response.ok) throw new Error(`HTTP Error ${response.status}. Ensure sheet is set to public access.`);
                 
                 const rawData = await response.json();
                 
                 if (!Array.isArray(rawData) || rawData.length === 0) {
-                    throw new Error("Sheet returned empty data.");
+                    throw new Error("Sheet returned empty rows.");
                 }
 
                 categoryHierarchy = {};
@@ -448,14 +437,26 @@
                         cleanItem[cleanKey] = val;
                     });
 
-                    const l1 = cleanItem.cat_l1 || cleanItem.catl1 || cleanItem.cat1 || cleanItem.cat || 'Curated Vibes';
-                    const l2 = cleanItem.cat_l2 || cleanItem.catl2 || cleanItem.cat2 || cleanItem.tag || '';
+                    const l1 = cleanItem.cat_l1 || cleanItem.catl1 || 'Curated Vibes';
+                    const l2 = cleanItem.cat_l2 || cleanItem.catl2 || cleanItem.tag || '';
+                    
+                    // Seating column normalization
+                    let seating = (cleanItem.seating || '').toLowerCase();
+                    if (!seating) {
+                        const checkText = `${cleanItem.desc} ${cleanItem.tag} ${l2}`.toLowerCase();
+                        if (checkText.includes('outdoor') || checkText.includes('garden') || checkText.includes('rooftop') || checkText.includes('patio')) {
+                            seating = 'outdoor';
+                        } else {
+                            seating = 'indoor';
+                        }
+                    }
 
                     cleanItem.id = idx;
                     cleanItem.name = cleanItem.name || cleanItem.place_name || '';
                     cleanItem.cat_l1 = l1;
                     cleanItem.cat_l2 = l2;
-                    cleanItem.img = cleanItem.img || FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length];
+                    cleanItem.seating = seating;
+                    cleanItem.img = cleanItem.img || FALLBACK_IMAGE;
 
                     if (l1) {
                         if (!categoryHierarchy[l1]) {
@@ -470,27 +471,32 @@
                 }).filter(item => item.name);
 
                 loadingState.classList.add('hidden');
+                document.getElementById('pinBoardSection').classList.remove('hidden');
                 buildCategoryUI();
                 renderGrid();
             } catch (err) {
-                console.error("Error fetching Google Sheet data:", err);
+                console.error("Error fetching sheet:", err);
                 loadingState.classList.add('hidden');
                 errorBanner.classList.remove('hidden');
                 document.getElementById('errorMessage').innerText = err.message;
             }
         }
 
+        /* Build Max 5 Main Vibe Buttons */
         function buildCategoryUI() {
             const catL1Container = document.getElementById('catL1Container');
             
             catL1Container.innerHTML = `
-                <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">
-                    All Pins
+                <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm flex-shrink-0">
+                    All Vibes
                 </button>
                 <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
             `;
 
-            Object.keys(categoryHierarchy).sort().forEach(l1Cat => {
+            // Limit to max 5 main vibes
+            const mainVibes = Object.keys(categoryHierarchy).slice(0, 5);
+
+            mainVibes.sort().forEach(l1Cat => {
                 const btn = document.createElement('button');
                 btn.id = `btn-catl1-${slugify(l1Cat)}`;
                 btn.className = "cat-l1-btn bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition flex-shrink-0";
@@ -569,27 +575,41 @@
             renderGrid();
         }
 
-        /* Pinterest-Style Pin Card Generation */
+        function setSeatingFilter(type) {
+            currentSeatingFilter = type;
+            document.querySelectorAll('.seating-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.getElementById(`seat-btn-${type}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600');
+                activeBtn.classList.add('bg-slate-900', 'text-white');
+            }
+            renderGrid();
+        }
+
+        /* Pinterest Pin Card Generator */
         function createCard(item) {
             const card = document.createElement('div');
             card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer";
             
             const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-            const displayBadge = item.cat_l2 || item.cat_l1 || item.tag || 'Food Spot';
+            const displayBadge = item.cat_l2 || item.cat_l1 || 'Food Spot';
 
             card.onclick = () => openPinModal(item);
 
             card.innerHTML = `
                 <div class="relative overflow-hidden bg-slate-100">
                     <img src="${item.img}" alt="${item.name}" 
-                         onerror="this.src='${FALLBACK_IMAGES[0]}'" 
+                         onerror="this.src='${FALLBACK_IMAGE}'" 
                          class="w-full h-auto object-cover group-hover:scale-105 transition duration-500 rounded-3xl">
                     
                     <!-- Top Hover Overlay Action Bar (Pinterest Save Button) -->
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-3.5 flex flex-col justify-between">
                         <div class="flex items-center justify-between">
                             <span class="bg-black/50 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20 tracking-wider uppercase">${displayBadge}</span>
-                            <button onclick="toggleSaveSpot(event, ${item.id})" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg transition flex items-center gap-1">
+                            <button onclick="toggleSaveSpot(event)" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg transition flex items-center gap-1">
                                 <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save
                             </button>
                         </div>
@@ -601,7 +621,7 @@
                         </div>
                     </div>
 
-                    <!-- Static Price Tag (Visible always) -->
+                    <!-- Price Tag -->
                     <div class="absolute top-3 right-3 group-hover:opacity-0 transition-opacity">
                         <span class="bg-slate-900/70 backdrop-blur-md text-emerald-400 text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
                     </div>
@@ -621,14 +641,15 @@
             return card;
         }
 
-        /* Lightbox Modal Functions */
+        /* Lightbox Modal */
         function openPinModal(item) {
             const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
             
             document.getElementById('modalImg').src = item.img;
             document.getElementById('modalTitle').innerText = item.name;
-            document.getElementById('modalArea').querySelector('span').innerText = item.area || 'Kuala Lumpur';
+            document.getElementById('modalArea').innerText = item.area || 'Kuala Lumpur';
             document.getElementById('modalCategory').innerText = item.cat_l2 || item.cat_l1 || 'Featured Spot';
+            document.getElementById('modalSeating').innerText = item.seating.toUpperCase() + ' SEATING';
             document.getElementById('modalDesc').innerText = item.desc || 'No detailed description available.';
             document.getElementById('modalMapLink').href = gmapsUrl;
 
@@ -636,11 +657,11 @@
             lucide.createIcons();
         }
 
-        function closePinModal(e) {
+        function closePinModal() {
             document.getElementById('pinModal').classList.add('hidden');
         }
 
-        function toggleSaveSpot(e, id) {
+        function toggleSaveSpot(e) {
             e.stopPropagation();
             const btn = e.currentTarget;
             btn.classList.toggle('bg-emerald-600');
@@ -651,21 +672,29 @@
         }
 
         function renderGrid() {
-            const indoorContainer = document.getElementById('indoorContainer');
-            const outdoorContainer = document.getElementById('outdoorContainer');
-            const indoorSection = document.getElementById('indoorSection');
-            const outdoorSection = document.getElementById('outdoorSection');
+            const pinContainer = document.getElementById('pinContainer');
             const noResults = document.getElementById('noResults');
 
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
 
-            indoorContainer.innerHTML = '';
-            outdoorContainer.innerHTML = '';
+            pinContainer.innerHTML = '';
 
             const filtered = restaurants.filter(item => {
+                // Match Cat L1
                 let matchL1 = (selectedCatL1 === 'all') || (item.cat_l1.toLowerCase() === selectedCatL1.toLowerCase());
+
+                // Match Cat L2
                 let matchL2 = (selectedCatL2 === 'all') || (item.cat_l2.toLowerCase().includes(selectedCatL2.toLowerCase()));
 
+                // Match Seating
+                let matchSeating = true;
+                if (currentSeatingFilter === 'indoor') {
+                    matchSeating = item.seating === 'indoor' || item.seating === 'both';
+                } else if (currentSeatingFilter === 'outdoor') {
+                    matchSeating = item.seating === 'outdoor' || item.seating === 'both';
+                }
+
+                // Match Search
                 const matchSearch = !query || 
                                     (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
@@ -673,35 +702,18 @@
                                     (item.cat_l1 || '').toLowerCase().includes(query) ||
                                     (item.cat_l2 || '').toLowerCase().includes(query);
 
-                return matchL1 && matchL2 && matchSearch;
+                return matchL1 && matchL2 && matchSeating && matchSearch;
             });
 
             updateMapMarkers(filtered);
 
-            let indoorCount = 0;
-            let outdoorCount = 0;
-
             filtered.forEach(item => {
-                const textCheck = `${item.desc} ${item.tag} ${item.cat_l1} ${item.cat_l2}`.toLowerCase();
-                const isOutdoor = textCheck.includes('outdoor') || textCheck.includes('alfresco') || textCheck.includes('patio') || textCheck.includes('garden') || textCheck.includes('courtyard') || textCheck.includes('terrace') || textCheck.includes('pool') || textCheck.includes('rooftop') || textCheck.includes('open-air');
-
                 const card = createCard(item);
-
-                if (isOutdoor) {
-                    outdoorContainer.appendChild(card);
-                    outdoorCount++;
-                } else {
-                    indoorContainer.appendChild(card);
-                    indoorCount++;
-                }
+                pinContainer.appendChild(card);
             });
 
-            document.getElementById('indoorCount').innerText = indoorCount;
-            document.getElementById('outdoorCount').innerText = outdoorCount;
-
-            indoorSection.classList.toggle('hidden', indoorCount === 0);
-            outdoorSection.classList.toggle('hidden', outdoorCount === 0);
-            noResults.classList.toggle('hidden', indoorCount > 0 || outdoorCount > 0);
+            document.getElementById('pinCount').innerText = `${filtered.length} spots`;
+            noResults.classList.toggle('hidden', filtered.length > 0);
 
             lucide.createIcons();
         }
@@ -712,6 +724,7 @@
 
         function resetFilters() {
             document.getElementById('searchInput').value = '';
+            setSeatingFilter('all');
             selectCatL1('all');
         }
 

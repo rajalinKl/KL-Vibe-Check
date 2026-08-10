@@ -39,6 +39,31 @@
             z-index: 10;
         }
 
+        /* Custom Emoji Map Marker Styling */
+        .vibe-marker-pin {
+            width: 36px;
+            height: 36px;
+            border-radius: 50% 50% 50% 0;
+            background: #2563EB; /* Blue color */
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -20px 0 0 -18px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #FFFFFF;
+        }
+
+        .vibe-marker-emoji {
+            transform: rotate(45deg);
+            font-size: 16px;
+            line-height: 1;
+            user-select: none;
+        }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
     </style>
@@ -103,8 +128,16 @@
 
     <script>
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        // OpenSheet converts the first sheet tab into clean JSON directly
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
+
+        const categoryEmojis = {
+            "instagrammable": "📸",
+            "pet-friendly": "🐾",
+            "outdoor-nature": "🌿",
+            "halal-aesthetic": "✨",
+            "street-night": "🌙",
+            "speakeasy": "🍸"
+        };
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -176,6 +209,18 @@
             }).addTo(map);
         }
 
+        // Helper to create a custom blue pin with the category emoji inside
+        function createEmojiIcon(catKey) {
+            const emoji = categoryEmojis[catKey] || '📍';
+            return L.divIcon({
+                className: 'custom-vibe-icon',
+                html: `<div class="vibe-marker-pin"><span class="vibe-marker-emoji">${emoji}</span></div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 36],
+                popupAnchor: [0, -32]
+            });
+        }
+
         function updateMapMarkers(items) {
             if (!map) initMap();
 
@@ -184,6 +229,7 @@
 
             items.forEach(item => {
                 const areaKey = (item.area || '').toLowerCase().trim();
+                const catKey = (item.cat || '').toLowerCase().trim();
                 const coords = areaCoordinates[areaKey] || [3.1390 + (Math.random() - 0.5) * 0.05, 101.6869 + (Math.random() - 0.5) * 0.05];
                 const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
 
@@ -196,7 +242,8 @@
                     </div>
                 `;
 
-                const marker = L.marker(coords).addTo(map).bindPopup(popupContent);
+                const markerIcon = createEmojiIcon(catKey);
+                const marker = L.marker(coords, { icon: markerIcon }).addTo(map).bindPopup(popupContent);
                 mapMarkers.push(marker);
             });
         }
@@ -226,15 +273,27 @@
                 
                 const rawData = await response.json();
 
-                // Normalize object keys to handle uppercase or whitespace headers in Sheet
                 restaurants = rawData.map(row => {
                     let cleanItem = {};
-                    Object.keys(row).forEach(key => {
-                        const cleanKey = key.trim().toLowerCase();
-                        let val = row[key] ? String(row[key]).trim() : '';
-                        if (cleanKey === 'cat') val = val.toLowerCase();
-                        cleanItem[cleanKey] = val;
-                    });
+
+                    if (row['name,cat,area,price,tag,img,desc']) {
+                        const parts = row['name,cat,area,price,tag,img,desc'].split(',');
+                        cleanItem.name = (parts[0] || '').trim();
+                        cleanItem.cat = (parts[1] || '').trim().toLowerCase();
+                        cleanItem.area = (parts[2] || '').trim();
+                        cleanItem.price = (parts[3] || '').trim();
+                        cleanItem.tag = (parts[4] || '').trim();
+                        cleanItem.img = (parts[5] || '').trim();
+                        cleanItem.desc = (parts[6] || '').trim();
+                    } else {
+                        Object.keys(row).forEach(key => {
+                            const cleanKey = key.trim().toLowerCase();
+                            let val = row[key] ? String(row[key]).trim() : '';
+                            if (cleanKey === 'cat') val = val.toLowerCase();
+                            cleanItem[cleanKey] = val;
+                        });
+                    }
+
                     return cleanItem;
                 }).filter(item => item.name);
 

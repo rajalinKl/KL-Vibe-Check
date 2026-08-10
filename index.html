@@ -84,14 +84,20 @@
                 </div>
             </div>
 
-            <div class="w-full md:w-auto flex items-center gap-3">
-                <div class="relative w-full md:w-72">
+            <div class="w-full md:w-auto flex flex-wrap items-center gap-2 md:gap-3">
+                <div class="relative flex-1 md:w-64">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
                 </div>
 
-                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
+                <!-- Map Toggle Button -->
+                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="map" class="w-4 h-4"></i> Map View
+                </button>
+
+                <!-- Suggestion Modal Button -->
+                <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest Spot
                 </button>
             </div>
         </div>
@@ -122,6 +128,68 @@
             </div>
         </div>
     </main>
+
+    <!-- Suggest Spot Modal -->
+    <div id="suggestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-slate-100">
+            <button onclick="closeSuggestModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="mb-5">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-rose-500"></i> Suggest a KL Spot
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">Know a new viral spot or hidden gem in KL? Send it over!</p>
+            </div>
+
+            <form id="suggestForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Place Name</label>
+                    <input type="text" name="place_name" required placeholder="e.g. Tone Cafe" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vibe Category</label>
+                        <select name="vibe_category" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
+                            <option value="instagrammable">📸 Instagrammable</option>
+                            <option value="pet-friendly">🐾 Pet Friendly</option>
+                            <option value="outdoor-nature">🌿 Nature & Outdoor</option>
+                            <option value="halal-aesthetic">✨ Halal Aesthetic</option>
+                            <option value="street-night">🌙 Late Night & Street</option>
+                            <option value="speakeasy">🍸 Speakeasy</option>
+                            <option value="rooftop">🌆 Rooftop View</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Area</label>
+                        <input type="text" name="area" required placeholder="e.g. Bangsar" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Instagram Handle / Link (Optional)</label>
+                    <input type="text" name="social_link" placeholder="e.g. @tonecafe.kl" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Why should it be listed?</label>
+                    <textarea name="description" rows="2" placeholder="Tell us what makes this spot special..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm rounded-xl transition shadow-md shadow-rose-500/20 flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation
+                </button>
+            </form>
+
+            <div id="formSuccessMessage" class="hidden text-center py-6">
+                <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500 mx-auto mb-2"></i>
+                <h3 class="text-base font-bold text-slate-900">Thank you!</h3>
+                <p class="text-xs text-slate-500 mt-1">Your suggestion has been sent. We'll review and add it to the list!</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
@@ -199,6 +267,50 @@
         let map = null;
         let mapMarkers = [];
         let isMapVisible = false;
+
+        function openSuggestModal() {
+            document.getElementById('suggestModal').classList.remove('hidden');
+            document.getElementById('suggestForm').classList.remove('hidden');
+            document.getElementById('formSuccessMessage').classList.add('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSuggestModal() {
+            document.getElementById('suggestModal').classList.add('hidden');
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Sending...";
+
+            const formData = new FormData(event.target);
+
+            try {
+                // Post to Formspree
+                const response = await fetch("https://formspree.io/f/mqakvode", {
+                    method: "POST",
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    document.getElementById('suggestForm').classList.add('hidden');
+                    document.getElementById('formSuccessMessage').classList.remove('hidden');
+                    event.target.reset();
+                } else {
+                    alert("There was an issue sending your recommendation. Please try again.");
+                }
+            } catch (err) {
+                console.error("Form error:", err);
+                alert("Network error. Please try again later.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation`;
+                lucide.createIcons();
+            }
+        }
 
         function initMap() {
             if (map) return;

@@ -44,7 +44,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50% 50% 50% 0;
-            background: #2563EB; /* Blue color */
+            background: #2563EB;
             position: absolute;
             transform: rotate(-45deg);
             left: 50%;
@@ -90,7 +90,6 @@
                     <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
                 </div>
 
-                <!-- View Switcher Toggle -->
                 <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="map" class="w-4 h-4"></i> Map View
                 </button>
@@ -111,15 +110,12 @@
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        
-        <!-- Interactive Map Section -->
         <section id="mapSection" class="mb-8 hidden">
             <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
                 <div id="mapContainer"></div>
             </div>
         </section>
 
-        <!-- Places Grid -->
         <div id="pinContainer" class="pin-grid">
             <div class="col-span-full py-16 text-center text-slate-400">
                 <p class="text-base font-medium">Loading places from Google Sheet...</p>
@@ -137,9 +133,8 @@
             "outdoor-nature": "🌿",
             "halal-aesthetic": "✨",
             "street-night": "🌙",
-            "speakeasy": "🍸"
-    "rooftop": "🌆"
-};
+            "speakeasy": "🍸",
+            "rooftop": "🌆"
         };
 
         const areaCoordinates = {
@@ -172,6 +167,7 @@
             "linc kl / bangsar": [3.1570, 101.7190],
             "damansara": [3.1500, 101.6200],
             "klcc": [3.1579, 101.7116],
+            "klcc view": [3.1579, 101.7116],
             "mahsa avenue": [3.1188, 101.6521],
             "kl city": [3.1466, 101.6958],
             "kuala lumpur": [3.1390, 101.6869],
@@ -194,7 +190,8 @@
             "bangsar shopping centre": [3.1430, 101.6670],
             "avenue k": [3.1594, 101.7136],
             "plaza damansara": [3.1520, 101.6530],
-            "jalan sultan": [3.1428, 101.6983]
+            "jalan sultan": [3.1428, 101.6983],
+            "jalan sultan ismail": [3.1580, 101.7030]
         };
 
         let restaurants = [];
@@ -212,9 +209,19 @@
             }).addTo(map);
         }
 
-        // Helper to create a custom blue pin with the category emoji inside
+        function getEmojiForKey(catKey) {
+            if (catKey.includes('rooftop')) return '🌆';
+            if (catKey.includes('insta')) return '📸';
+            if (catKey.includes('pet')) return '🐾';
+            if (catKey.includes('nature') || catKey.includes('outdoor')) return '🌿';
+            if (catKey.includes('halal')) return '✨';
+            if (catKey.includes('street') || catKey.includes('night')) return '🌙';
+            if (catKey.includes('speak')) return '🍸';
+            return '📍';
+        }
+
         function createEmojiIcon(catKey) {
-            const emoji = categoryEmojis[catKey] || '📍';
+            const emoji = getEmojiForKey(catKey);
             return L.divIcon({
                 className: 'custom-vibe-icon',
                 html: `<div class="vibe-marker-pin"><span class="vibe-marker-emoji">${emoji}</span></div>`,
@@ -318,7 +325,16 @@
 
             const filtered = restaurants.filter(item => {
                 const itemCat = (item.cat || '').toLowerCase().trim();
-                const matchCat = (currentCat === 'all' || itemCat === currentCat.toLowerCase());
+                
+                let matchCat = (currentCat === 'all');
+                if (!matchCat) {
+                    if (currentCat === 'rooftop') {
+                        matchCat = itemCat.includes('rooftop');
+                    } else {
+                        matchCat = (itemCat === currentCat.toLowerCase());
+                    }
+                }
+
                 const matchSearch = (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
                                     (item.desc || '').toLowerCase().includes(query);

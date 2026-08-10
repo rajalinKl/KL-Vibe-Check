@@ -102,10 +102,7 @@
     </main>
 
     <script>
-        // Google Sheet ID
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        const DIRECT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
-        const FETCH_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(DIRECT_CSV_URL)}`;
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -168,42 +165,6 @@
         let mapMarkers = [];
         let isMapVisible = false;
 
-        // Robust CSV Parser handling quotes, commas, and linebreaks
-        function parseCSV(text) {
-            let p = '', c = '', r = [];
-            let q = false;
-            let row = [''];
-            for (let i = 0; i < text.length; i++) {
-                c = text[i];
-                p = text[i - 1];
-                if (c === '"') {
-                    if (q && text[i + 1] === '"') { row[row.length - 1] += '"'; i++; }
-                    else { q = !q; }
-                } else if (c === ',' && !q) {
-                    row.push('');
-                } else if ((c === '\r' || c === '\n') && !q) {
-                    if (c === '\r' && text[i + 1] === '\n') { i++; }
-                    r.push(row);
-                    row = [''];
-                } else {
-                    row[row.length - 1] += c;
-                }
-            }
-            if (row.length > 1 || row[0] !== '') { r.push(row); }
-            if (r.length < 2) return [];
-
-            const headers = r[0].map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
-            return r.slice(1).map(rowValues => {
-                let obj = {};
-                headers.forEach((h, idx) => {
-                    let val = (rowValues[idx] || '').trim().replace(/^"|"$/g, '');
-                    if (h === 'cat') val = val.toLowerCase();
-                    obj[h] = val;
-                });
-                return obj;
-            }).filter(item => item.name);
-        }
-
         function initMap() {
             if (map) return;
             map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
@@ -256,27 +217,50 @@
             lucide.createIcons();
         }
 
-        async function fetchSheetData() {
+        // Global callback function for Google Visualization JSONP response
+        window.handleSheetResponse = function(response) {
             try {
-                const response = await fetch(FETCH_URL);
-                if (!response.ok) throw new Error("HTTP Error " + response.status);
-                
-                const csvText = await response.text();
-                restaurants = parseCSV(csvText);
-
-                if (restaurants.length === 0) {
-                    throw new Error("No valid rows parsed from Google Sheet");
+                if (!response.table || !response.table.rows) {
+                    throw new Error("Invalid structure from Google Sheets");
                 }
-                
+
+                const cols = response.table.cols.map(c => c ? (c.label || '').toLowerCase().trim() : '');
+                const rows = response.table.rows;
+
+                restaurants = rows.map(r => {
+                    let item = {};
+                    r.c.forEach((cell, idx) => {
+                        const key = cols[idx];
+                        if (key) {
+                            let val = cell ? (cell.v || '') : '';
+                            if (typeof val === 'string') val = val.trim();
+                            if (key === 'cat') val = String(val).toLowerCase();
+                            item[key] = val;
+                        }
+                    });
+                    return item;
+                }).filter(item => item.name);
+
                 renderGrid();
-            } catch (err) {
-                console.error("Error fetching Google Sheet data:", err);
-                document.getElementById('pinContainer').innerHTML = `
-                    <div class="col-span-full py-16 text-center text-rose-500">
-                        <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-2">Check that Google Sheet sharing is set to "Anyone with the link can view".</p>
-                    </div>`;
+            } catch (e) {
+                console.error("Error parsing Google Sheets payload:", e);
+                showError();
             }
+        };
+
+        function showError() {
+            document.getElementById('pinContainer').innerHTML = `
+                <div class="col-span-full py-16 text-center text-rose-500">
+                    <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
+                    <p class="text-xs text-slate-400 mt-2">Check that Google Sheet sharing is set to "Anyone with the link can view".</p>
+                </div>`;
+        }
+
+        function loadGoogleSheetData() {
+            const script = document.createElement('script');
+            script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:handleSheetResponse`;
+            script.onerror = showError;
+            document.body.appendChild(script);
         }
 
         function renderGrid() {
@@ -359,7 +343,7 @@
             renderGrid();
         }
 
-        fetchSheetData();
+        loadGoogleSheetData();
     </script>
 </body>
 </html>

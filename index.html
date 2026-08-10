@@ -71,40 +71,26 @@
     </main>
 
     <script>
-        // REPLACE THIS STRING WITH YOUR GOOGLE SHEET ID
-        const SHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        // Connected to your Google Sheet ID
+        const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
+        const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
 
         let restaurants = [];
         let currentCat = 'all';
 
         async function fetchSheetData() {
             try {
-                const response = await fetch('https://docs.google.com/spreadsheets/d/1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ');
-                const text = await response.text();
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
                 
-                const jsonData = JSON.parse(text.substring(47, text.length - 2));
-                const cols = jsonData.table.cols.map(col => col.label ? col.label.toLowerCase() : '');
-                const rows = jsonData.table.rows;
-
-                restaurants = rows.map(row => {
-                    let item = {};
-                    row.c.forEach((cell, idx) => {
-                        const key = cols[idx];
-                        if (key) {
-                            item[key] = cell ? (cell.v || '') : '';
-                        }
-                    });
-                    return item;
-                });
-
+                restaurants = await response.json();
                 renderGrid();
             } catch (err) {
                 console.error("Error fetching Google Sheet data:", err);
                 document.getElementById('pinContainer').innerHTML = `
                     <div class="col-span-full py-16 text-center text-rose-500">
                         <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-1">Check that SHEET_ID is correct and Sheet is set to "Anyone with the link".</p>
+                        <p class="text-xs text-slate-400 mt-2">1. Make sure Google Sheet sharing is set to "Anyone with the link can view".<br>2. Try refreshing the page in a few seconds.</p>
                     </div>`;
             }
         }

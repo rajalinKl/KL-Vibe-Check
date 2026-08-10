@@ -98,4 +98,29 @@
     }
 
     fetchSheetData();
+    // Creates a direct Google Search link for the place photos
+const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}&tbm=isch`;
+
+card.innerHTML = `
+    <a href="${googleSearchUrl}" target="_blank" class="block">
+        <div class="relative overflow-hidden aspect-[4/5] bg-slate-100">
+            <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
+            
+            <div class="absolute top-3 left-3 flex gap-2">
+                <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
+            </div>
+
+            <div class="absolute top-3 right-3">
+                <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
+            </div>
+
+            <div class="absolute bottom-0 inset-x-0 p-4 text-white">
+                <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
+                <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
+                <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+            </div>
+        </div>
+    </a>
+`;
 </script>

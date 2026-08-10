@@ -39,7 +39,6 @@
             z-index: 10;
         }
 
-        /* Custom Emoji Map Marker Styling */
         .vibe-marker-pin {
             width: 36px;
             height: 36px;
@@ -90,12 +89,10 @@
                     <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
                 </div>
 
-                <!-- Map Toggle Button -->
                 <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="map" class="w-4 h-4"></i> Map View
                 </button>
 
-                <!-- Suggestion Modal Button -->
                 <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
                     <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest Spot
                 </button>
@@ -115,17 +112,34 @@
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        <section id="mapSection" class="mb-8 hidden">
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-10">
+        <section id="mapSection" class="hidden">
             <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
                 <div id="mapContainer"></div>
             </div>
         </section>
 
-        <div id="pinContainer" class="pin-grid">
-            <div class="col-span-full py-16 text-center text-slate-400">
-                <p class="text-base font-medium">Loading places from Google Sheet...</p>
+        <!-- Indoor Seating Section -->
+        <section id="indoorSection">
+            <div class="flex items-center gap-2 mb-4">
+                <h2 class="text-xl font-bold text-slate-900">🏠 Indoor Seating Only</h2>
+                <span id="indoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
             </div>
+            <div id="indoorContainer" class="pin-grid"></div>
+        </section>
+
+        <!-- Outdoor Seating Section -->
+        <section id="outdoorSection">
+            <div class="flex items-center gap-2 mb-4">
+                <h2 class="text-xl font-bold text-slate-900">🌿 Outdoor / Alfresco Seating Available</h2>
+                <span id="outdoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="outdoorContainer" class="pin-grid"></div>
+        </section>
+
+        <div id="noResults" class="hidden py-16 text-center text-slate-400">
+            <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
+            <p class="text-lg font-medium">No dining spots found matching your search.</p>
         </div>
     </main>
 
@@ -194,16 +208,6 @@
     <script>
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
-
-        const categoryEmojis = {
-            "instagrammable": "📸",
-            "pet-friendly": "🐾",
-            "outdoor-nature": "🌿",
-            "halal-aesthetic": "✨",
-            "street-night": "🌙",
-            "speakeasy": "🍸",
-            "rooftop": "🌆"
-        };
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -288,7 +292,6 @@
             const formData = new FormData(event.target);
 
             try {
-                // Post to Formspree
                 const response = await fetch("https://formspree.io/f/mqakvode", {
                     method: "POST",
                     body: formData,
@@ -422,84 +425,102 @@
                 renderGrid();
             } catch (err) {
                 console.error("Error fetching Google Sheet data:", err);
-                document.getElementById('pinContainer').innerHTML = `
-                    <div class="col-span-full py-16 text-center text-rose-500">
-                        <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-2">Ensure Google Sheet sharing is set to "Anyone with the link can view".</p>
-                    </div>`;
             }
         }
 
+        function createCard(item) {
+            const card = document.createElement('div');
+            card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1";
+            
+            const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
+
+            card.innerHTML = `
+                <div class="relative overflow-hidden aspect-[4/5] bg-slate-100 cursor-pointer" onclick="window.open('${gmapsUrl}', '_blank')">
+                    <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
+                    
+                    <div class="absolute top-3 left-3 flex gap-2">
+                        <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
+                    </div>
+
+                    <div class="absolute top-3 right-3">
+                        <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
+                    </div>
+
+                    <div class="absolute bottom-0 inset-x-0 p-4 text-white">
+                        <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
+                        <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
+                        <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
+                    <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area}</span>
+                    <a href="${gmapsUrl}" target="_blank" class="flex items-center gap-1 text-rose-500 font-bold hover:underline">
+                        Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            `;
+            return card;
+        }
+
         function renderGrid() {
-            const container = document.getElementById('pinContainer');
+            const indoorContainer = document.getElementById('indoorContainer');
+            const outdoorContainer = document.getElementById('outdoorContainer');
+            const indoorSection = document.getElementById('indoorSection');
+            const outdoorSection = document.getElementById('outdoorSection');
+            const noResults = document.getElementById('noResults');
+
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            container.innerHTML = '';
+
+            indoorContainer.innerHTML = '';
+            outdoorContainer.innerHTML = '';
 
             const filtered = restaurants.filter(item => {
-                const itemCat = (item.cat || '').toLowerCase().trim();
+                const cats = (item.cat || '').toLowerCase().split(',').map(c => c.trim());
                 
                 let matchCat = (currentCat === 'all');
                 if (!matchCat) {
                     if (currentCat === 'rooftop') {
-                        matchCat = itemCat.includes('rooftop');
+                        matchCat = cats.some(c => c.includes('rooftop'));
                     } else {
-                        matchCat = (itemCat === currentCat.toLowerCase());
+                        matchCat = cats.includes(currentCat.toLowerCase());
                     }
                 }
 
                 const matchSearch = (item.name || '').toLowerCase().includes(query) || 
                                     (item.area || '').toLowerCase().includes(query) || 
-                                    (item.desc || '').toLowerCase().includes(query);
+                                    (item.desc || '').toLowerCase().includes(query) ||
+                                    (item.tag || '').toLowerCase().includes(query);
                 return matchCat && matchSearch;
             });
 
             updateMapMarkers(filtered);
 
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-16 text-center text-slate-400">
-                        <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-                        <p class="text-lg font-medium">No dining spots found matching your search.</p>
-                    </div>`;
-                lucide.createIcons();
-                return;
-            }
+            let indoorCount = 0;
+            let outdoorCount = 0;
 
             filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1";
-                
-                const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
+                const textCheck = (item.desc + ' ' + item.tag + ' ' + item.cat).toLowerCase();
+                const isOutdoor = textCheck.includes('outdoor') || textCheck.includes('alfresco') || textCheck.includes('patio') || textCheck.includes('garden') || textCheck.includes('courtyard') || textCheck.includes('terrace') || textCheck.includes('pool') || textCheck.includes('rooftop') || textCheck.includes('open-air');
 
-                card.innerHTML = `
-                    <div class="relative overflow-hidden aspect-[4/5] bg-slate-100 cursor-pointer" onclick="window.open('${gmapsUrl}', '_blank')">
-                        <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
-                        
-                        <div class="absolute top-3 left-3 flex gap-2">
-                            <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
-                        </div>
+                const card = createCard(item);
 
-                        <div class="absolute top-3 right-3">
-                            <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-                        </div>
-
-                        <div class="absolute bottom-0 inset-x-0 p-4 text-white">
-                            <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
-                            <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
-                            <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
-                        <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area}</span>
-                        <a href="${gmapsUrl}" target="_blank" class="flex items-center gap-1 text-rose-500 font-bold hover:underline">
-                            Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        </a>
-                    </div>
-                `;
-                container.appendChild(card);
+                if (isOutdoor) {
+                    outdoorContainer.appendChild(card);
+                    outdoorCount++;
+                } else {
+                    indoorContainer.appendChild(card);
+                    indoorCount++;
+                }
             });
+
+            document.getElementById('indoorCount').innerText = indoorCount;
+            document.getElementById('outdoorCount').innerText = outdoorCount;
+
+            indoorSection.style.display = indoorCount > 0 ? 'block' : 'none';
+            outdoorSection.style.display = outdoorCount > 0 ? 'block' : 'none';
+            noResults.style.display = (indoorCount === 0 && outdoorCount === 0) ? 'block' : 'none';
 
             lucide.createIcons();
         }

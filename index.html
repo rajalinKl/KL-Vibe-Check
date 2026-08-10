@@ -4,182 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KL Vibe Check — Dining & Cafe Directory</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        .pin-grid {
-            column-count: 1;
-            column-gap: 1.25rem;
-        }
+        .pin-grid { column-count: 1; column-gap: 1.25rem; }
         @media (min-width: 640px) { .pin-grid { column-count: 2; } }
         @media (min-width: 1024px) { .pin-grid { column-count: 3; } }
         @media (min-width: 1280px) { .pin-grid { column-count: 4; } }
-        
-        .pin-card {
-            break-inside: avoid;
-            margin-bottom: 1.25rem;
-        }
-
-        #mapContainer {
-            height: 420px;
-            width: 100%;
-            border-radius: 1.5rem;
-            z-index: 10;
-        }
-
-        .vibe-marker-pin {
-            width: 36px;
-            height: 36px;
-            border-radius: 50% 50% 50% 0;
-            background: #2563EB;
-            position: absolute;
-            transform: rotate(-45deg);
-            left: 50%;
-            top: 50%;
-            margin: -20px 0 0 -18px;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #FFFFFF;
-        }
-
-        .vibe-marker-emoji {
-            transform: rotate(45deg);
-            font-size: 16px;
-            line-height: 1;
-            user-select: none;
-        }
-
-        /* Active Hero Card Ring */
-        .hub-card.active-hub {
-            ring-width: 2px;
-            --tw-ring-color: #F43F5E;
-            border-color: #F43F5E !important;
-            transform: translateY(-2px);
-        }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+        .pin-card { break-inside: avoid; margin-bottom: 1.25rem; }
+        #mapContainer { height: 420px; width: 100%; border-radius: 1.5rem; }
+        .hub-card.active-hub { border: 2px solid #F43F5E !important; transform: translateY(-2px); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 antialiased">
 
-    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
-                    <i data-lucide="compass" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">KL Vibe Check</h1>
-                    <p class="text-xs text-slate-500 font-medium">Curated Kuala Lumpur Dining & Map Locator</p>
-                </div>
-            </div>
-
-            <div class="w-full md:w-auto flex flex-wrap items-center gap-2 md:gap-3">
-                <div class="relative flex-1 md:w-64">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
-                </div>
-
-                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
-                    <i data-lucide="map" class="w-4 h-4"></i> Map View
-                </button>
-
-                <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-3.5 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest Spot
-                </button>
-            </div>
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-extrabold tracking-tight">KL Vibe Check</h1>
+            <button onclick="toggleMapView()" id="mapToggleBtn" class="bg-rose-500 text-white px-4 py-2 rounded-full text-xs font-bold">Map View</button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
-
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
+        <!-- FIXED LEVEL 1 HUBS -->
         <section>
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h2 class="text-xl font-extrabold text-slate-900">Explore by Vibe Hub</h2>
-                    <p class="text-xs text-slate-500">Pick an atmosphere to unlock tailored listing</p>
-                </div>
-                <button onclick="selectHub('all')" id="resetHubBtn" class="text-xs font-bold text-rose-500 hover:underline">Show All Vibes</button>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div id="hub-speakeasy" onclick="selectHub('speakeasy')" class="hub-card cursor-pointer group relative bg-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-800">
-                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🍸</div>
-                    <p class="text-2xl mb-2">🍸</p>
-                    <h3 class="text-base font-bold text-white leading-snug">Speakeasies & Mood</h3>
-                    <p class="text-xs text-slate-400 mt-1">Intimate, low-light, dates & hidden bars</p>
-                </div>
-
-                <div id="hub-rooftop" onclick="selectHub('rooftop')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-900/50">
-                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌆</div>
-                    <p class="text-2xl mb-2">🌆</p>
-                    <h3 class="text-base font-bold text-white leading-snug">Rooftops & Views</h3>
-                    <p class="text-xs text-slate-300 mt-1">Skylines, sunset drinks & high energy</p>
-                </div>
-
-                <div id="hub-outdoor-nature" onclick="selectHub('outdoor-nature')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-emerald-900/50">
-                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌿</div>
-                    <p class="text-2xl mb-2">🌿</p>
-                    <h3 class="text-base font-bold text-white leading-snug">Outdoor & Nature</h3>
-                    <p class="text-xs text-emerald-200 mt-1">Garden cafes, alfresco & lush greenery</p>
-                </div>
-
-                <div id="hub-street-night" onclick="selectHub('street-night')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-amber-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-900/50">
-                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🌙</div>
-                    <p class="text-2xl mb-2">🌙</p>
-                    <h3 class="text-base font-bold text-white leading-snug">Late Night & Street Eats</h3>
-                    <p class="text-xs text-amber-200 mt-1">Night markets & post-midnight cravings</p>
-                </div>
-
-                <div id="hub-party" onclick="selectHub('party')" class="hub-card cursor-pointer group relative bg-gradient-to-br from-purple-950 to-slate-900 rounded-3xl p-5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-purple-900/50">
-                    <div class="absolute top-0 right-0 p-4 text-4xl opacity-20 group-hover:opacity-40 transition">🪩</div>
-                    <p class="text-2xl mb-2">🪩</p>
-                    <h3 class="text-base font-bold text-white leading-snug">Party & Nightlife</h3>
-                    <p class="text-xs text-purple-200 mt-1">Clubs, lounges & live DJ music</p>
-                </div>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <button onclick="selectHub('speakeasy')" id="hub-speakeasy" class="hub-card bg-slate-900 text-white p-4 rounded-2xl text-xs font-bold hover:bg-rose-500 transition">🍸 Speakeasy</button>
+                <button onclick="selectHub('rooftop')" id="hub-rooftop" class="hub-card bg-slate-900 text-white p-4 rounded-2xl text-xs font-bold hover:bg-rose-500 transition">🌆 Rooftop</button>
+                <button onclick="selectHub('outdoor-nature')" id="hub-outdoor-nature" class="hub-card bg-slate-900 text-white p-4 rounded-2xl text-xs font-bold hover:bg-rose-500 transition">🌿 Nature</button>
+                <button onclick="selectHub('street-night')" id="hub-street-night" class="hub-card bg-slate-900 text-white p-4 rounded-2xl text-xs font-bold hover:bg-rose-500 transition">🌙 Street</button>
+                <button onclick="selectHub('party')" id="hub-party" class="hub-card bg-slate-900 text-white p-4 rounded-2xl text-xs font-bold hover:bg-rose-500 transition">🎉 Party</button>
+                <button onclick="selectHub('all')" class="bg-slate-200 text-slate-700 p-4 rounded-2xl text-xs font-bold hover:bg-slate-300 transition">↺ All</button>
             </div>
         </section>
 
-        <section id="level2Section" class="hidden bg-white p-4 rounded-2xl border border-rose-100/80 flex flex-wrap items-center justify-between gap-3 shadow-sm transition-all duration-300">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span id="activeHubLabel" class="text-xs font-bold text-slate-700 capitalize">Sub-filters for selected vibe:</span>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <button onclick="toggleFeature('instagrammable')" id="tag-instagrammable" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">📸 Instagrammable</button>
-                <button onclick="toggleFeature('halal-aesthetic')" id="tag-halal-aesthetic" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">✨ Halal Aesthetic</button>
-                <button onclick="toggleFeature('pet-friendly')" id="tag-pet-friendly" class="feature-tag bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-full border border-slate-200 transition">🐾 Pet-Friendly</button>
-            </div>
+        <!-- FLUID LEVEL 2 TAGS -->
+        <section id="level2Section" class="hidden bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between gap-4 shadow-sm">
+            <span id="activeHubLabel" class="text-xs font-bold text-slate-500 uppercase">Sub-filters:</span>
+            <div id="dynamicTags" class="flex flex-wrap items-center gap-2"></div>
         </section>
 
-        <section id="mapSection" class="hidden">
-            <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
-                <div id="mapContainer"></div>
-            </div>
-        </section>
+        <section id="mapSection" class="hidden"><div id="mapContainer"></div></section>
 
-        <section id="indoorSection">
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-xl font-bold text-slate-900">🏠 Indoor Seating Only</h2>
-                <span id="indoorCount" class="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
-            </div>
-            <div id="indoorContainer" class="pin-grid"></div>
-        </section>
+        <div id="gridContainer" class="pin-grid"></div>
+    </main>
 
-        <section id="outdoorSection">
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-xl font-bold text-slate-900">🌿 Outdoor / Alfresco Seating Available</h2>
-                <span id="outdoorCount" class="bg-slate-200 text
+    <script>
+        let restaurants = []; // Loaded from your Sheet
+        let currentHub = 'all';
+        let activeFeatures = [];
+
+        function selectHub(hub) {
+            currentHub = hub;
+            activeFeatures = [];
+            document.querySelectorAll('.hub-card').forEach(c => c.classList.remove('active-hub'));
+            if (hub !== 'all') document.getElementById(`hub-${hub}`).classList.add('active-hub');
+            
+            document.getElementById('level2Section').classList.toggle('hidden', hub === 'all');
+            renderDynamicTags();
+            renderGrid();
+        }
+
+        function renderDynamicTags() {
+            const container = document.getElementById('dynamicTags');
+            container.innerHTML = '';
+            
+            const items = currentHub === 'all' ? restaurants : restaurants.filter(i => i.cat_l1 === currentHub);
+            const tags = new Set();
+            items.forEach(i => i.cat_l2 && i.cat_l2.split(',').forEach(t => tags.add(t.trim())));
+
+            tags.forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-1.5 rounded-full text-xs font-bold border transition ${activeFeatures.includes(tag) ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-200'}`;
+                btn.innerText = tag.toUpperCase();
+                btn.onclick = () => {
+                    activeFeatures.includes(tag) ? activeFeatures.splice(activeFeatures.indexOf(tag), 1) : activeFeatures.push(tag);
+                    renderDynamicTags(); renderGrid();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('gridContainer');
+            grid.innerHTML = '';
+            const filtered = restaurants.filter(i => {
+                const matchHub = (currentHub === 'all' || i.cat_l1 === currentHub);
+                const matchTags = activeFeatures.length === 0 || activeFeatures.every(f => i.cat_l2 && i.cat_l2.includes(f));
+                return matchHub && matchTags;
+            });
+            filtered.forEach(item => {
+                grid.innerHTML += `<div class="pin-card bg-white p-4 rounded-2xl border">${item.name}</div>`;
+            });
+        }
+
+        // Add your fetch logic here to populate 'restaurants' array
+    </script>
+</body>
+</html>

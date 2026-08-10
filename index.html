@@ -103,6 +103,8 @@
 
     <script>
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
+        // OpenSheet converts the first sheet tab into clean JSON directly
+        const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -217,50 +219,34 @@
             lucide.createIcons();
         }
 
-        // Global callback function for Google Visualization JSONP response
-        window.handleSheetResponse = function(response) {
+        async function fetchSheetData() {
             try {
-                if (!response.table || !response.table.rows) {
-                    throw new Error("Invalid structure from Google Sheets");
-                }
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                
+                const rawData = await response.json();
 
-                const cols = response.table.cols.map(c => c ? (c.label || '').toLowerCase().trim() : '');
-                const rows = response.table.rows;
-
-                restaurants = rows.map(r => {
-                    let item = {};
-                    r.c.forEach((cell, idx) => {
-                        const key = cols[idx];
-                        if (key) {
-                            let val = cell ? (cell.v || '') : '';
-                            if (typeof val === 'string') val = val.trim();
-                            if (key === 'cat') val = String(val).toLowerCase();
-                            item[key] = val;
-                        }
+                // Normalize object keys to handle uppercase or whitespace headers in Sheet
+                restaurants = rawData.map(row => {
+                    let cleanItem = {};
+                    Object.keys(row).forEach(key => {
+                        const cleanKey = key.trim().toLowerCase();
+                        let val = row[key] ? String(row[key]).trim() : '';
+                        if (cleanKey === 'cat') val = val.toLowerCase();
+                        cleanItem[cleanKey] = val;
                     });
-                    return item;
+                    return cleanItem;
                 }).filter(item => item.name);
 
                 renderGrid();
-            } catch (e) {
-                console.error("Error parsing Google Sheets payload:", e);
-                showError();
+            } catch (err) {
+                console.error("Error fetching Google Sheet data:", err);
+                document.getElementById('pinContainer').innerHTML = `
+                    <div class="col-span-full py-16 text-center text-rose-500">
+                        <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
+                        <p class="text-xs text-slate-400 mt-2">Ensure Google Sheet sharing is set to "Anyone with the link can view".</p>
+                    </div>`;
             }
-        };
-
-        function showError() {
-            document.getElementById('pinContainer').innerHTML = `
-                <div class="col-span-full py-16 text-center text-rose-500">
-                    <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                    <p class="text-xs text-slate-400 mt-2">Check that Google Sheet sharing is set to "Anyone with the link can view".</p>
-                </div>`;
-        }
-
-        function loadGoogleSheetData() {
-            const script = document.createElement('script');
-            script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:handleSheetResponse`;
-            script.onerror = showError;
-            document.body.appendChild(script);
         }
 
         function renderGrid() {
@@ -343,7 +329,7 @@
             renderGrid();
         }
 
-        loadGoogleSheetData();
+        fetchSheetData();
     </script>
 </body>
 </html>

@@ -96,15 +96,79 @@
         <!-- Places Grid -->
         <div id="pinContainer" class="pin-grid">
             <div class="col-span-full py-16 text-center text-slate-400">
-                <p class="text-base font-medium">Loading places from Google Sheet...</p>
+                <p class="text-base font-medium">Loading places...</p>
             </div>
         </div>
     </main>
 
     <script>
-        // Official Google Visualization API URL
+        // Direct Google Sheet CSV Export Endpoint
         const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+
+        // Embedded Fallback Dataset
+        const fallbackRestaurants = [
+            { name: "Chocha Foodstore", cat: "instagrammable", area: "Chinatown", price: "$$", tag: "Heritage Shophouse", img: "https://images.unsplash.com/photo-1554118811-1e0d58224f24", desc: "Raw concrete, vintage tiles, and lush inner patio courtyard." },
+            { name: "Grumpy Bagels", cat: "instagrammable", area: "Imbi", price: "$$", tag: "Yellow Bungalow", img: "https://images.unsplash.com/photo-1509440159596-0249088772ff", desc: "A cozy restored yellow house serving hand-rolled artisanal bagels." },
+            { name: "Niko Neko Matcha 3.0", cat: "instagrammable", area: "Chinatown / Bangsar", price: "$$", tag: "Minimalist Zen", img: "https://images.unsplash.com/photo-1536256263959-770b48d82b0a", desc: "Sleek, white-walled sanctuary for artisanal ceremonial matcha drinks." },
+            { name: "Doña Bakehouse", cat: "instagrammable", area: "Kuala Lumpur", price: "$$", tag: "European Cafe", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", desc: "Gorgeous European pastries, floral decor, and vintage brass aesthetic." },
+            { name: "Bake by Banyan Tree", cat: "instagrammable", area: "Pavilion / Bukit Bintang", price: "$$$", tag: "Hotel Luxe", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4", desc: "High-end patisserie offering exquisite viennoiserie inside luxury surrounds." },
+            { name: "Contour", cat: "instagrammable", area: "PJ Old Town", price: "$$", tag: "Industrial Minimal", img: "https://images.unsplash.com/photo-1521017432531-fbd92d768814", desc: "Curved raw concrete counter, artisanal bread baking, and specialty pours." },
+            { name: "Likoo Likoo", cat: "instagrammable", area: "Bukit Bintang", price: "$$", tag: "Retro Pop", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b", desc: "Vibrant multi-level coffee spot with vintage neon lights and artistic nooks." },
+            { name: "KLCG Confectionery & Bakery", cat: "instagrammable", area: "Dataran Merdeka", price: "$$", tag: "Heritage Square", img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", desc: "Famous for cronuts and artisanal pastries inside an iconic heritage building." },
+            { name: "House of Wheat", cat: "instagrammable", area: "Chow Kit", price: "$$", tag: "Warm Earth Tones", img: "https://images.unsplash.com/photo-1442512595331-e89e73853f31", desc: "Architectural sourdough haven with sunlit archways and warm wooden tones." },
+            { name: "Merchant's Lane", cat: "instagrammable", area: "Petaling Street", price: "$$", tag: "Rustic Vintage", img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085", desc: "Hidden upstairs café celebrating old KL charm with local fusion dishes." },
+            { name: "Pause Café", cat: "pet-friendly", area: "Segambut", price: "$", tag: "Pet Welcome", img: "https://images.unsplash.com/photo-1543007630-9710e4a00a20", desc: "Homey residential retreat serving comfort rice bowls where pets can roam." },
+            { name: "CuBs & CuPs", cat: "pet-friendly", area: "Desa Sri Hartamas", price: "$$", tag: "Paws & Coffee", img: "https://images.unsplash.com/photo-1534447677768-be436bb09401", desc: "Run by Korean dog lovers, offering treats for both owners and pets." },
+            { name: "Alison Soup House", cat: "pet-friendly", area: "TTDI", price: "$$", tag: "Homemade Soups", img: "https://images.unsplash.com/photo-1547592166-23ac45744acd", desc: "Warm nourishing soups served in a cozy space hosted by resident Poodle Spikey." },
+            { name: "After One", cat: "pet-friendly", area: "KL City Centre", price: "$$$", tag: "Alfresco Garden", img: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17", desc: "Michelin-recommended health-conscious bistro with a pet-friendly lawn." },
+            { name: "Clawset Cafe", cat: "pet-friendly", area: "Damansara Jaya", price: "$$", tag: "Dog & Cat Lounge", img: "https://images.unsplash.com/photo-1517849845537-4d257902454a", desc: "Enjoy waffles and coffee while playing with sweet resident pups and cats." },
+            { name: "The Hound KL", cat: "pet-friendly", area: "Taman OUG", price: "$$", tag: "Classic Pub-Style", img: "https://images.unsplash.com/photo-1530281700549-e82e7bf110d6", desc: "Chill neighborhood hub known for home-baked cakes and resident Beagle, Blue." },
+            { name: "Huskiss", cat: "pet-friendly", area: "Kelana Jaya", price: "$$", tag: "Siberian Huskies", img: "https://images.unsplash.com/photo-1605568427561-40dd23c2acea", desc: "Dedicated Husky cafe experience where guests cuddle majestic fluffy huskies." },
+            { name: "RaRa Coffee", cat: "pet-friendly", area: "Hartamas", price: "$$", tag: "Outdoor Decking", img: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb", desc: "Spacious Muji-style coffee spot with outdoor seating designed for pet parents." },
+            { name: "Swim Paradise Park & Cafe", cat: "pet-friendly", area: "Ampang", price: "$$", tag: "Dog Pool & Park", img: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b", desc: "Features a dedicated dog swimming pool and wide open park spaces for pets." },
+            { name: "Blink Pets Bakery", cat: "pet-friendly", area: "LDP SS7", price: "$", tag: "Pet Bakery", img: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e", desc: "Custom cakes and baked treats for pets while human companions sip coffee." },
+            { name: "Tamarind Springs", cat: "outdoor-nature", area: "Ampang Reserve", price: "$$$", tag: "Jungle Dining", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e", desc: "Fine Indochinese dining set inside lush rainforest foliage and stone paths." },
+            { name: "Campsyde TTDI", cat: "outdoor-nature", area: "Sungai Penchala", price: "$", tag: "Campfire Chill", img: "https://images.unsplash.com/photo-1510312305653-8ed496efae75", desc: "Relax in outdoor camping chairs under fairy-lit trees with evening coffee." },
+            { name: "Wildseed Café", cat: "outdoor-nature", area: "1-Altitude KL", price: "$$$", tag: "Garden Greenhouse", img: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3", desc: "Floral-themed rooftop garden café with open breezes and floral-infused dishes." },
+            { name: "Subak Restaurant", cat: "outdoor-nature", area: "Bukit Lanjan", price: "$$$", tag: "Balinese Forest", img: "https://images.unsplash.com/photo-1519046904884-53103b34b206", desc: "Balinese sanctuary surrounded by flowing stream waters and jungle sounds." },
+            { name: "Veg Fish Farm Thai", cat: "outdoor-nature", area: "Ampang Hills", price: "$$", tag: "Speedboat Seafood", img: "https://images.unsplash.com/photo-1559339352-11d035aa65de", desc: "Floating dining platforms over a natural lake where seafood is sped out by boat." },
+            { name: "Lemuni Cafe", cat: "outdoor-nature", area: "Janda Baik / Outskirts", price: "$$$", tag: "Royal Malay Palace", img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef", desc: "Traditional Malay dining set against sprawling green valley hills." },
+            { name: "Saudagar Nanas Agrofarm", cat: "outdoor-nature", area: "Kajang", price: "$", tag: "Pineapple Hill", img: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba", desc: "Fresh pineapple juice and desserts enjoyed on a scenic hilltop plantation." },
+            { name: "Florescence", cat: "outdoor-nature", area: "Batang Kali", price: "$$", tag: "Waterlily Garden", img: "https://images.unsplash.com/photo-1508873696983-2df515122519", desc: "Picturesque garden cafe overlooking waterlily ponds reminiscent of Monet's art." },
+            { name: "Orchard Hill", cat: "outdoor-nature", area: "Semenyih", price: "$$", tag: "Durian Forest", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05", desc: "Open-air dining inside a lush durian orchard surrounded by Broga's hills." },
+            { name: "Kebun Cafe", cat: "outdoor-nature", area: "Batang Kali", price: "$", tag: "Rustic Forest", img: "https://images.unsplash.com/photo-1448375240586-882707db888b", desc: "Simple wooden hideaway serving artisanal cakes amidst tall rainforest trees." },
+            { name: "De.Wan Space by Chef Wan", cat: "halal-aesthetic", area: "Linc KL / Bangsar", price: "$$$", tag: "Authentic Malay", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", desc: "Vibrant immersion into authentic Malaysian recipes curated by Chef Wan." },
+            { name: "Jalan Kayu Manis House", cat: "halal-aesthetic", area: "Damansara", price: "$$$", tag: "Modern Fusion", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4", desc: "Sophisticated Muslim-owned dining combining local spices with Western techniques." },
+            { name: "OpenHouse", cat: "halal-aesthetic", area: "KLCC", price: "$$$$", tag: "Heritage Gourmet", img: "https://images.unsplash.com/photo-1544025162-d76694265947", desc: "Opulent jungle-themed fine dining highlighting forgotten Malaysian recipes." },
+            { name: "Pokok KL", cat: "halal-aesthetic", area: "MAHSA Avenue", price: "$$", tag: "Glasshouse Brunch", img: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb", desc: "Iconic floor-to-ceiling glasshouse cafe famous for halal fusion brunches." },
+            { name: "The Malayan Council", cat: "halal-aesthetic", area: "KL City", price: "$$$", tag: "Malay-Western Fusion", img: "https://images.unsplash.com/photo-1541544741938-0af808871cc0", desc: "Generous pasta and cake portions with local touches like Ondeh Ondeh cake." },
+            { name: "Kheng Wah Coffee House", cat: "halal-aesthetic", area: "Kuala Lumpur", price: "$", tag: "Nanyang Kopitiam", img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", desc: "Pork-free modernized Kopitiam serving classic Hainanese toast and butter coffee." },
+            { name: "Bijan Bar & Restaurant", cat: "halal-aesthetic", area: "Bukit Ceylon", price: "$$$", tag: "Traditional Gourmet", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", desc: "Award-winning refined Malay dining in an intimate dim-lit ambiance." },
+            { name: "Serai", cat: "halal-aesthetic", area: "Pavilion / Empire Subang", price: "$$", tag: "Family Elegance", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0", desc: "Reliable, beautifully styled space serving Nasi Kerabu and signature Ribeye." },
+            { name: "Tujoh Cafe", cat: "halal-aesthetic", area: "Section 17", price: "$$", tag: "Retro Glass Courtyard", img: "https://images.unsplash.com/photo-1525610553991-2bede1a236e2", desc: "Pork-free cafe featuring retro TV installations and mid-century modern seating." },
+            { name: "Dolly Dim Sum", cat: "halal-aesthetic", area: "Avenue K / Sunway", price: "$$", tag: "Halal Dim Sum House", img: "https://images.unsplash.com/photo-1563245372-f21724e3856d", desc: "Modern Chinese tea house serving 100% Halal dim sum dishes." },
+            { name: "Jalan Alor Night Market", cat: "street-night", area: "Bukit Bintang", price: "$", tag: "Bustling Street", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836", desc: "Vibrant neon-lit food strip loaded with satay, grilled seafood, and durian." },
+            { name: "Single Dose", cat: "street-night", area: "PJ Old Town", price: "$", tag: "Late Night Brews", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b", desc: "Vintage late-night espresso haunt open until 2 AM for midnight coffee runs." },
+            { name: "Tapak Urban Street Dining", cat: "street-night", area: "KLCC View", price: "$", tag: "Food Trucks", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38", desc: "Open-air food truck park set directly under the glowing Petronas Twin Towers." },
+            { name: "Nasi Kandar Pelita", cat: "street-night", area: "Jalan Ampang", price: "$", tag: "24/7 Mamak", img: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc", desc: "Iconic round-the-clock supper spot famous for crispy Roti Canai and curry." },
+            { name: "Tannin Hill", cat: "street-night", area: "KL City Centre", price: "$$$", tag: "Cafe by Day / Bar by Night", img: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3", desc: "Specialty coffee roastery that transitions into a cozy natural wine lounge." },
+            { name: "Kampung Baru Night Market", cat: "street-night", area: "Kampung Baru", price: "$", tag: "Traditional Night Market", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", desc: "Authentic Malay street food enclave featuring legendary Nasi Lemak Wanjo." },
+            { name: "Bottega KL", cat: "street-night", area: "Bukit Ceylon", price: "$$", tag: "Courtyard Wine & Pasta", img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141", desc: "Intimate Mediterranean alfresco courtyard perfect for charcuterie and wine." },
+            { name: "Syarikat Kopi Brickfields", cat: "street-night", area: "Brickfields", price: "$", tag: "Late Night Kopitiam", img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", desc: "Late-night coffee joint serving retro toasts and local brew blends till late." },
+            { name: "Rasta TTDI", cat: "street-night", area: "TTDI", price: "$", tag: "Outdoor Food Court", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591", desc: "Enormous outdoor casual food court known for western burgers and shisha." },
+            { name: "Murni Discovery", cat: "street-night", area: "SS2 / Bukit Jalil", price: "$", tag: "Fusion Supper", img: "https://images.unsplash.com/photo-1561758033-d89a9ad46330", desc: "Giant portions of fusion fried rice, ribs, and oversized signature drinks." },
+            { name: "PS150", cat: "speakeasy", area: "Chinatown", price: "$$", tag: "Toy Shop Entrance", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b", desc: "Hidden behind a vintage toy shop lot, offering Asian-inspired craft cocktails in distinct atmospheric rooms." },
+            { name: "Suzie Wong", cat: "speakeasy", area: "Jalan Raja Chulan", price: "$$$", tag: "Wonton Noodle Cart", img: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3", desc: "Step past a glowing street wonton cart into a glamorous 1960s Hong Kong cabaret lounge." },
+            { name: "Three X Co", cat: "speakeasy", area: "Bangsar Shopping Centre", price: "$$$", tag: "Barbershop Door", img: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce", desc: "Hidden behind a gentleman's barber shop curtain, serving award-winning cocktails with local ingredients." },
+            { name: "Penrose", cat: "speakeasy", area: "Petaling Street", price: "$$$$", tag: "Discreet Door", img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141", desc: "Sleek, minimalist cocktail sanctuary tucked away in Chinatown, ranked among Asia's top cocktail bars." },
+            { name: "Frank's Bar", cat: "speakeasy", area: "Avenue K", price: "$$$", tag: "Sinatra Prohibition", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b", desc: "Prohibition-era speakeasy celebrating Frank Sinatra, vintage cigars, and aged spirits." },
+            { name: "Skullduggery", cat: "speakeasy", area: "Plaza Damansara", price: "$$$", tag: "Alleyway Entrance", img: "https://images.unsplash.com/photo-1521017432531-fbd92d768814", desc: "Hidden behind a back alley in Plaza Damansara, styled like an old-world dark mahogany gentlemen's club." },
+            { name: "The Attic Bar", cat: "speakeasy", area: "Chinatown", price: "$", tag: "Guesthouse Rooftop", img: "https://images.unsplash.com/photo-1519046904884-53103b34b206", desc: "Accessed via a hidden winding staircase inside a guesthouse, offering casual drinks with Chinatown rooftop views." },
+            { name: "Kapitan Haus", cat: "speakeasy", area: "Petaling Street", price: "$$", tag: "Above Da Bao", img: "https://images.unsplash.com/photo-1541544741938-0af808871cc0", desc: "Hidden on the upper floor of Da Bao, serving signature local cocktails under moody neon lights." },
+            { name: "Reka:Bar", cat: "speakeasy", area: "Bukit Damansara", price: "$$$", tag: "Flavor Laboratory", img: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3", desc: "Futuristic cocktail laboratory focusing on high-tech flavor extraction and experimental drinks." },
+            { name: "Crane Upstairs", cat: "speakeasy", area: "Jalan Sultan", price: "$$", tag: "Plush Red Velvet", img: "https://images.unsplash.com/photo-1554118811-1e0d58224f24", desc: "Tucked above Crane Chinatown, featuring lush red curtains, vintage decor, and house cocktails." }
+        ];
 
         const areaCoordinates = {
             "chinatown": [3.1439, 101.6974],
@@ -174,6 +238,43 @@
         let mapMarkers = [];
         let isMapVisible = false;
 
+        function parseCSV(csvText) {
+            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) return [];
+
+            function parseLine(text) {
+                const result = [];
+                let cur = '';
+                let inQuotes = false;
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(cur.trim());
+                        cur = '';
+                    } else {
+                        cur += char;
+                    }
+                }
+                result.push(cur.trim());
+                return result;
+            }
+
+            const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/^"|"$/g, ''));
+            const items = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseLine(lines[i]).map(v => v.replace(/^"|"$/g, ''));
+                let obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h] = values[idx] || '';
+                });
+                if (obj.name) items.push(obj);
+            }
+            return items;
+        }
+
         function initMap() {
             if (map) return;
             map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
@@ -228,34 +329,22 @@
 
         async function fetchSheetData() {
             try {
-                const response = await fetch(SHEET_URL);
-                const text = await response.text();
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
                 
-                // Parse Google Visualization JSON payload
-                const jsonData = JSON.parse(text.substring(47, text.length - 2));
-                const cols = jsonData.table.cols.map(col => col.label ? col.label.toLowerCase() : '');
-                const rows = jsonData.table.rows;
+                const csvText = await response.text();
+                const fetchedItems = parseCSV(csvText);
 
-                restaurants = rows.map(row => {
-                    let item = {};
-                    row.c.forEach((cell, idx) => {
-                        const key = cols[idx];
-                        if (key) {
-                            item[key] = cell ? (cell.v || '') : '';
-                        }
-                    });
-                    return item;
-                });
-
-                renderGrid();
+                if (fetchedItems && fetchedItems.length > 0) {
+                    restaurants = fetchedItems;
+                } else {
+                    restaurants = fallbackRestaurants;
+                }
             } catch (err) {
-                console.error("Error fetching Google Sheet data:", err);
-                document.getElementById('pinContainer').innerHTML = `
-                    <div class="col-span-full py-16 text-center text-rose-500">
-                        <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                        <p class="text-xs text-slate-400 mt-2">Ensure Google Sheet sharing is set to "Anyone with the link can view".</p>
-                    </div>`;
+                console.warn("Using fallback dataset due to fetch issue:", err);
+                restaurants = fallbackRestaurants;
             }
+            renderGrid();
         }
 
         function renderGrid() {

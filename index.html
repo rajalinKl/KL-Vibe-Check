@@ -69,7 +69,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
 
-    <!-- Header & Filter Navigation -->
+    <!-- Header & Navigation -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
@@ -99,15 +99,24 @@
             </div>
         </div>
 
+        <!-- Grouped Category Filter Bar -->
         <div class="max-w-7xl mx-auto mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold">
             <button onclick="setCategory('all')" class="cat-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">All Vibes</button>
-            <button onclick="setCategory('instagrammable')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
-            <button onclick="setCategory('pet-friendly')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
-            <button onclick="setCategory('outdoor-nature')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌿 Nature & Jungle</button>
-            <button onclick="setCategory('halal-aesthetic')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">✨ Halal Fine & Casual</button>
+            
+            <div class="h-4 w-px bg-slate-200 mx-1"></div>
+
+            <!-- Atmosphere & Energy Subcategories -->
+            <button onclick="setCategory('speakeasy')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasy & Intimate</button>
+            <button onclick="setCategory('rooftop')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌆 Rooftop & Skyline Views</button>
+            <button onclick="setCategory('outdoor-nature')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌿 Nature & Outdoor</button>
             <button onclick="setCategory('street-night')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌙 Late Night & Street</button>
-            <button onclick="setCategory('speakeasy')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasies</button>
-            <button onclick="setCategory('rooftop')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌆 Rooftop Views</button>
+
+            <div class="h-4 w-px bg-slate-200 mx-1"></div>
+
+            <!-- Aesthetic & Features Subcategories -->
+            <button onclick="setCategory('instagrammable')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
+            <button onclick="setCategory('halal-aesthetic')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">✨ Halal Aesthetic</button>
+            <button onclick="setCategory('pet-friendly')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
         </div>
     </header>
 
@@ -166,14 +175,21 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vibe Category</label>
-                        <select name="vibe_category" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                            <option value="instagrammable">📸 Instagrammable</option>
-                            <option value="pet-friendly">🐾 Pet Friendly</option>
-                            <option value="outdoor-nature">🌿 Nature & Outdoor</option>
-                            <option value="halal-aesthetic">✨ Halal Aesthetic</option>
-                            <option value="street-night">🌙 Late Night & Street</option>
-                            <option value="speakeasy">🍸 Speakeasy</option>
-                            <option value="rooftop">🌆 Rooftop View</option>
+                        <select name="vibe_category" id="vibe-select" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
+                            <option value="" disabled selected>Select a Vibe / Atmosphere...</option>
+                            
+                            <optgroup label="Atmosphere & Energy">
+                                <option value="speakeasy">🍸 Speakeasy & Intimate</option>
+                                <option value="rooftop">🌆 Rooftop & Skyline Views</option>
+                                <option value="outdoor-nature">🌿 Nature & Outdoor</option>
+                                <option value="street-night">🌙 Late Night & Street</option>
+                            </optgroup>
+                            
+                            <optgroup label="Aesthetic & Features">
+                                <option value="instagrammable">📸 Instagrammable</option>
+                                <option value="halal-aesthetic">✨ Halal Aesthetic</option>
+                                <option value="pet-friendly">🐾 Pet Friendly</option>
+                            </optgroup>
                         </select>
                     </div>
                     <div>

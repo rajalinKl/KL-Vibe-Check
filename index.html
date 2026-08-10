@@ -1,126 +1,338 @@
-<script>
-    // Your Google Sheet ID
-    const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-    // Requesting specifically from 'Sheet1'
-    const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KL Vibe Check — Dining & Cafe Directory</title>
 
-    let restaurants = [];
-    let currentCat = 'all';
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts & Lucide Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    async function fetchSheetData() {
-        try {
-            const response = await fetch(SHEET_URL);
-            if (!response.ok) throw new Error("HTTP Error " + response.status);
-            
-            restaurants = await response.json();
-            renderGrid();
-        } catch (err) {
-            console.error("Error fetching Google Sheet data:", err);
-            document.getElementById('pinContainer').innerHTML = `
-                <div class="col-span-full py-16 text-center text-rose-500">
-                    <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
-                    <p class="text-xs text-slate-400 mt-2">Check that Google Sheet sharing is set to "Anyone with the link can view".</p>
-                </div>`;
+    <!-- Leaflet OpenStreetMap CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        .pin-grid {
+            column-count: 1;
+            column-gap: 1.25rem;
         }
-    }
-
-    function renderGrid() {
-        const container = document.getElementById('pinContainer');
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        container.innerHTML = '';
-
-        const filtered = restaurants.filter(item => {
-            const matchCat = (currentCat === 'all' || item.cat === currentCat);
-            const matchSearch = (item.name || '').toLowerCase().includes(query) || 
-                                (item.area || '').toLowerCase().includes(query) || 
-                                (item.desc || '').toLowerCase().includes(query);
-            return matchCat && matchSearch;
-        });
-
-        if (filtered.length === 0) {
-            container.innerHTML = `
-                <div class="col-span-full py-16 text-center text-slate-400">
-                    <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-                    <p class="text-lg font-medium">No dining spots found matching your search.</p>
-                </div>`;
-            lucide.createIcons();
-            return;
+        @media (min-width: 640px) { .pin-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .pin-grid { column-count: 3; } }
+        @media (min-width: 1280px) { .pin-grid { column-count: 4; } }
+        
+        .pin-card {
+            break-inside: avoid;
+            margin-bottom: 1.25rem;
         }
 
-        filtered.forEach(item => {
-            const card = document.createElement('div');
-            card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer";
+        #mapContainer {
+            height: 420px;
+            width: 100%;
+            border-radius: 1.5rem;
+            z-index: 10;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
+
+    <!-- Header & Filter Navigation -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
-            card.innerHTML = `
-                <div class="relative overflow-hidden aspect-[4/5] bg-slate-100">
-                    <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
-                    
-                    <div class="absolute top-3 left-3 flex gap-2">
-                        <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
-                    </div>
-
-                    <div class="absolute top-3 right-3">
-                        <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-                    </div>
-
-                    <div class="absolute bottom-0 inset-x-0 p-4 text-white">
-                        <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
-                        <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
-                        <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
-                    </div>
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
+                    <i data-lucide="compass" class="w-5 h-5"></i>
                 </div>
-                
-                <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
-                    <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area}</span>
-                    <button class="hover:text-rose-500 transition"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">KL Vibe Check</h1>
+                    <p class="text-xs text-slate-500 font-medium">Curated Kuala Lumpur Dining & Map Locator</p>
                 </div>
-            `;
-            container.appendChild(card);
-        });
-
-        lucide.createIcons();
-    }
-
-    function setCategory(cat) {
-        currentCat = cat;
-        document.querySelectorAll('.cat-btn').forEach(btn => {
-            btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
-            btn.classList.add('bg-white', 'text-slate-600');
-        });
-        event.target.classList.remove('bg-white', 'text-slate-600');
-        event.target.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
-        renderGrid();
-    }
-
-    function filterPlaces() {
-        renderGrid();
-    }
-
-    fetchSheetData();
-    // Creates a direct Google Search link for the place photos
-const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}&tbm=isch`;
-
-card.innerHTML = `
-    <a href="${googleSearchUrl}" target="_blank" class="block">
-        <div class="relative overflow-hidden aspect-[4/5] bg-slate-100">
-            <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
-            
-            <div class="absolute top-3 left-3 flex gap-2">
-                <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
             </div>
 
-            <div class="absolute top-3 right-3">
-                <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-            </div>
+            <div class="w-full md:w-auto flex items-center gap-3">
+                <div class="relative w-full md:w-72">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search by name, food, area..." class="w-full pl-9 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition">
+                </div>
 
-            <div class="absolute bottom-0 inset-x-0 p-4 text-white">
-                <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
-                <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
-                <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+                <!-- View Switcher Toggle -->
+                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
+                    <i data-lucide="map" class="w-4 h-4"></i> Map View
+                </button>
             </div>
         </div>
-    </a>
-`;
-</script>
+
+        <div class="max-w-7xl mx-auto mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold">
+            <button onclick="setCategory('all')" class="cat-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm">All Vibes</button>
+            <button onclick="setCategory('instagrammable')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">📸 Instagrammable</button>
+            <button onclick="setCategory('pet-friendly')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🐾 Pet Friendly</button>
+            <button onclick="setCategory('outdoor-nature')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌿 Nature & Jungle</button>
+            <button onclick="setCategory('halal-aesthetic')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">✨ Halal Fine & Casual</button>
+            <button onclick="setCategory('street-night')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🌙 Late Night & Street</button>
+            <button onclick="setCategory('speakeasy')" class="cat-btn bg-white hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition">🍸 Speakeasies</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+        
+        <!-- Interactive Map Section -->
+        <section id="mapSection" class="mb-8 hidden">
+            <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
+                <div id="mapContainer"></div>
+            </div>
+        </section>
+
+        <!-- Places Grid -->
+        <div id="pinContainer" class="pin-grid">
+            <div class="col-span-full py-16 text-center text-slate-400">
+                <p class="text-base font-medium">Loading places from Google Sheet...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Google Sheet ID
+        const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
+        const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
+
+        // Approximate Lat/Lng coordinates for common KL regions
+        const areaCoordinates = {
+            "chinatown": [3.1439, 101.6974],
+            "petaling street": [3.1439, 101.6974],
+            "imbi": [3.1422, 101.7100],
+            "bangsar": [3.1292, 101.6713],
+            "pavilion / bukit bintang": [3.1488, 101.7132],
+            "bukit bintang": [3.1488, 101.7132],
+            "pj old town": [3.0872, 101.6461],
+            "dataran merdeka": [3.1480, 101.6937],
+            "chow kit": [3.1636, 101.6980],
+            "segambut": [3.1856, 101.6606],
+            "desa sri hartamas": [3.1610, 101.6508],
+            "hartamas": [3.1610, 101.6508],
+            "ttdi": [3.1367, 101.6219],
+            "kl city centre": [3.1579, 101.7116],
+            "damansara jaya": [3.1278, 101.6163],
+            "taman oug": [3.0736, 101.6719],
+            "kelana jaya": [3.1022, 101.5975],
+            "ampang": [3.1500, 101.7600],
+            "ampang reserve": [3.1520, 101.7700],
+            "ampang hills": [3.1550, 101.7750],
+            "ldp ss7": [3.0988, 101.5950],
+            "sungai penchala": [3.1622, 101.6250],
+            "1-altitude kl": [3.1579, 101.7116],
+            "bukit lanjan": [3.1700, 101.6100],
+            "janda baik / outskirts": [3.3167, 101.8667],
+            "kajang": [2.9935, 101.7874],
+            "batang kali": [3.4684, 101.6392],
+            "semenyih": [2.9481, 101.8465],
+            "linc kl / bangsar": [3.1570, 101.7190],
+            "damansara": [3.1500, 101.6200],
+            "klcc": [3.1579, 101.7116],
+            "mahsa avenue": [3.1188, 101.6521],
+            "kl city": [3.1466, 101.6958],
+            "kuala lumpur": [3.1390, 101.6869],
+            "bukit ceylon": [3.1492, 101.7042],
+            "pavilion / empire subang": [3.0820, 101.5822],
+            "section 17": [3.1250, 101.6350],
+            "avenue k / sunway": [3.1594, 101.7136],
+            "pj old town": [3.0872, 101.6461],
+            "klcc view": [3.1579, 101.7116],
+            "jalan ampang": [3.1585, 101.7150],
+            "kampung baru": [3.1619, 101.7031],
+            "brickfields": [3.1292, 101.6838],
+            "ss2 / bukit jalil": [3.1188, 101.6231],
+            "the five, bukit damansara": [3.1500, 101.6620],
+            "bukit damansara": [3.1500, 101.6620],
+            "passer seni / kl": [3.1425, 101.6955],
+            "jaland tun razak": [3.1700, 101.7200],
+            "publika": [3.1708, 101.6658],
+            "plaza tuah 1895": [3.1411, 101.7088],
+            "sin chew kee road": [3.1422, 101.7060],
+            "section 17, pj": [3.1250, 101.6350],
+            "ara damansara": [3.1283, 101.5783],
+            "titiwangsa": [3.1800, 101.7000],
+            "cybersouth": [2.8800, 101.6500],
+            "jalan raja chulan": [3.1500, 101.7080],
+            "bangsar shopping centre": [3.1430, 101.6670],
+            "avenue k": [3.1594, 101.7136],
+            "plaza damansara": [3.1520, 101.6530],
+            "jalan sultan": [3.1428, 101.6983]
+        };
+
+        let restaurants = [];
+        let currentCat = 'all';
+        let map = null;
+        let mapMarkers = [];
+        let isMapVisible = false;
+
+        // Initialize Leaflet Map
+        function initMap() {
+            if (map) return;
+            
+            // Centered on Kuala Lumpur
+            map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        function updateMapMarkers(items) {
+            if (!map) initMap();
+
+            // Clear old markers
+            mapMarkers.forEach(marker => map.removeLayer(marker));
+            mapMarkers = [];
+
+            items.forEach(item => {
+                const areaKey = (item.area || '').toLowerCase().trim();
+                const coords = areaCoordinates[areaKey] || [3.1390 + (Math.random() - 0.5) * 0.05, 101.6869 + (Math.random() - 0.5) * 0.05];
+
+                const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
+
+                const popupContent = `
+                    <div style="width: 180px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                        <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 10px; font-weight: bold; color: #E11D48; text-transform: uppercase;">${item.area || 'KL'}</span>
+                        <h4 style="font-size: 13px; font-weight: bold; margin: 2px 0 4px 0; color: #0F172A;">${item.name}</h4>
+                        <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #F43F5E; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
+                    </div>
+                `;
+
+                const marker = L.marker(coords).addTo(map).bindPopup(popupContent);
+                mapMarkers.push(marker);
+            });
+        }
+
+        function toggleMapView() {
+            const mapSec = document.getElementById('mapSection');
+            const toggleBtn = document.getElementById('mapToggleBtn');
+
+            isMapVisible = !isMapVisible;
+
+            if (isMapVisible) {
+                mapSec.classList.remove('hidden');
+                toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Grid View`;
+                initMap();
+                setTimeout(() => map.invalidateSize(), 200); // Fix map rendering dimensions
+            } else {
+                mapSec.classList.add('hidden');
+                toggleBtn.innerHTML = `<i data-lucide="map" class="w-4 h-4"></i> Map View`;
+            }
+            lucide.createIcons();
+        }
+
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                
+                restaurants = await response.json();
+                renderGrid();
+            } catch (err) {
+                console.error("Error fetching Google Sheet data:", err);
+                document.getElementById('pinContainer').innerHTML = `
+                    <div class="col-span-full py-16 text-center text-rose-500">
+                        <p class="text-base font-bold">Failed to load data from Google Sheet.</p>
+                        <p class="text-xs text-slate-400 mt-2">Make sure Google Sheet sharing is set to "Anyone with the link can view".</p>
+                    </div>`;
+            }
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('pinContainer');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = restaurants.filter(item => {
+                const matchCat = (currentCat === 'all' || item.cat === currentCat);
+                const matchSearch = (item.name || '').toLowerCase().includes(query) || 
+                                    (item.area || '').toLowerCase().includes(query) || 
+                                    (item.desc || '').toLowerCase().includes(query);
+                return matchCat && matchSearch;
+            });
+
+            // Update map pins to match search/category filters
+            updateMapMarkers(filtered);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-16 text-center text-slate-400">
+                        <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
+                        <p class="text-lg font-medium">No dining spots found matching your search.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "pin-card group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1";
+                
+                const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
+
+                card.innerHTML = `
+                    <div class="relative overflow-hidden aspect-[4/5] bg-slate-100 cursor-pointer" onclick="window.open('${gmapsUrl}', '_blank')">
+                        <img src="${item.img || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-80"></div>
+                        
+                        <div class="absolute top-3 left-3 flex gap-2">
+                            <span class="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">${item.tag || 'Food Spot'}</span>
+                        </div>
+
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-slate-900/60 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
+                        </div>
+
+                        <div class="absolute bottom-0 inset-x-0 p-4 text-white">
+                            <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider mb-0.5">${item.area || 'Kuala Lumpur'}</p>
+                            <h3 class="text-lg font-bold leading-tight mb-1">${item.name || 'Unnamed Spot'}</h3>
+                            <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">${item.desc || ''}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-white flex items-center justify-between text-slate-400 text-xs border-t border-slate-100">
+                        <span class="flex items-center gap-1 font-medium text-slate-600"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> ${item.area}</span>
+                        <a href="${gmapsUrl}" target="_blank" class="flex items-center gap-1 text-rose-500 font-bold hover:underline">
+                            Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function setCategory(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-white', 'text-slate-600');
+            });
+            event.target.classList.remove('bg-white', 'text-slate-600');
+            event.target.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+            renderGrid();
+        }
+
+        function filterPlaces() {
+            renderGrid();
+        }
+
+        // Initialize Page
+        fetchSheetData();
+    </script>
+</body>
+</html>

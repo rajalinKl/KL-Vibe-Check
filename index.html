@@ -365,34 +365,49 @@ function getField(item,...keys){
 
 function isTruthy(v){return /yes|true|1|verified|recommended|new|trending/i.test(String(v||''));}
 
-function normalizeItem(row,idx){
-  const item={};
-  Object.keys(row).forEach(k=>item[normalize(k).replace(/[\s\-_]+/g,'_')]=String(row[k]??'').trim());
-  item.id=idx;
-  item.name=getField(item,'name','place_name','restaurant');
-  item.area=getField(item,'area','neighbourhood','neighborhood')||'Kuala Lumpur';
-  item.cat_l1=getField(item,'cat_l1','catl1','vibe','category')||'Curated';
-  item.cat_l2=getField(item,'cat_l2','catl2','tag','tags');
-  item.cuisine=getField(item,'cuisine','food_type','type');
-  item.desc=getField(item,'desc','description','about')||'A KL dining spot worth discovering.';
-  item.why=getField(item,'why','why_we_recommend','why_its_on_vibe_check','editor_note')||item.desc;
-  item.price=normalizePrice(getField(item,'price','price_range','budget'));
-  item.price_text=getField(item,'price_text','price_description');
-  item.seating=normalize(getField(item,'seating','indoor_outdoor','setting'))||'indoor';
-  item.best_for=getField(item,'best_for','occasion','occasions','perfect_for')||item.cat_l2||item.cat_l1;
-  item.halal=getField(item,'halal','halal_status')||'Not specified';
-  item.parking=getField(item,'parking','parking_info')||'Not specified';
-  item.verified=getField(item,'verified','last_verified','verified_date')||'Not yet verified';
-  item.vibe_score=parseScore(getField(item,'vibe_score','vibe','score','rating'));
-  item.google_rating=parseScore(getField(item,'google_rating','google_score'));
-  item.img=getField(item,'img','image','image_url','photo')||FALLBACK_IMAGE;
-  item.reservation_url=getField(item,'reservation_url','reserve_url','booking_url','reservation');
-  item.trending=getField(item,'trending','featured','popular');
-  item.new_spot=getField(item,'new','new_spot','new_opening');
-  item.hidden=getField(item,'hidden_gem','hidden','hidden_spot');
-  item.local=getField(item,'local_favourite','local_favorite','locals_pick','local');
-  item.cuisine_text=item.cuisine||item.cat_l1;
-  item.searchText=Object.values(item).join(' ').toLowerCase();
+function normalizeItem(row, idx) {
+  const item = {};
+  
+  // Clean all incoming 46 column keys to standard lowercase with underscores
+  Object.keys(row).forEach(k => {
+    const cleanKey = normalize(k).replace(/[\s\-_]+/g, '_');
+    item[cleanKey] = String(row[k] ?? '').trim();
+  });
+
+  item.id = idx;
+  
+  // Map fields flexibly across your 46 columns
+  item.name = getField(item, 'name', 'place_name', 'restaurant', 'restaurant_name', 'spot_name', 'venue', 'title', 'place', 'spot');
+  item.area = getField(item, 'area', 'neighbourhood', 'neighborhood', 'location', 'district', 'zone', 'city') || 'Kuala Lumpur';
+  item.cat_l1 = getField(item, 'cat_l1', 'catl1', 'vibe', 'category', 'occasion', 'vibe_type', 'primary_vibe') || 'Curated';
+  item.cat_l2 = getField(item, 'cat_l2', 'catl2', 'tag', 'tags', 'sub_vibe', 'secondary_vibe');
+  item.cuisine = getField(item, 'cuisine', 'food_type', 'type', 'category', 'food');
+  
+  item.desc = getField(item, 'desc', 'description', 'about', 'details', 'summary') || 'A KL dining spot worth discovering.';
+  item.why = getField(item, 'why', 'why_we_recommend', 'why_its_on_vibe_check', 'editor_note', 'review', 'editorial_note') || item.desc;
+  
+  item.price = normalizePrice(getField(item, 'price', 'price_range', 'budget', 'cost'));
+  item.price_text = getField(item, 'price_text', 'price_description', 'pricing');
+  item.seating = normalize(getField(item, 'seating', 'indoor_outdoor', 'setting', 'environment', 'atmosphere')) || 'indoor';
+  
+  item.best_for = getField(item, 'best_for', 'occasion', 'occasions', 'perfect_for', 'ideal_for') || item.cat_l2 || item.cat_l1;
+  item.halal = getField(item, 'halal', 'halal_status', 'halal_certified', 'dietary') || 'Not specified';
+  item.parking = getField(item, 'parking', 'parking_info', 'parking_availability') || 'Not specified';
+  item.verified = getField(item, 'verified', 'last_verified', 'verified_date', 'date_verified') || 'Not yet verified';
+  
+  item.vibe_score = parseScore(getField(item, 'vibe_score', 'vibe', 'score', 'rating', 'vibe_rating', 'overall_score'));
+  item.google_rating = parseScore(getField(item, 'google_rating', 'google_score', 'google_stars'));
+  item.img = getField(item, 'img', 'image', 'image_url', 'photo', 'picture', 'banner', 'thumbnail') || FALLBACK_IMAGE;
+  item.reservation_url = getField(item, 'reservation_url', 'reserve_url', 'booking_url', 'reservation', 'link');
+  
+  item.trending = getField(item, 'trending', 'featured', 'popular', 'is_trending');
+  item.new_spot = getField(item, 'new', 'new_spot', 'new_opening', 'is_new');
+  item.hidden = getField(item, 'hidden_gem', 'hidden', 'hidden_spot', 'is_hidden');
+  item.local = getField(item, 'local_favourite', 'local_favorite', 'locals_pick', 'local');
+  
+  item.cuisine_text = item.cuisine || item.cat_l1;
+  item.searchText = Object.values(item).join(' ').toLowerCase();
+  
   return item;
 }
 

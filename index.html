@@ -313,9 +313,10 @@
 <script>
 // Your direct Apps Script URL wrapped with a CORS bridge to prevent browser blocks
 const RAW_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxVCyWeswnHd3BX07cpCYlMrX2oqfiuTdZPAHWm5tYwr_wR5ygxpUWcgMwK7LXoJlU5/exec';
-const API_URL = 'https://sheetdb.io/api/v1/your_unique_id';
 const FALLBACK_IMAGE='https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1000&auto=format&fit=crop&q=80';const areaCoordinates={
-
+// Replace your API_URL line with this clean public endpoint format
+const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
+const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
   "chinatown":[3.1439,101.6974],"petaling street":[3.1439,101.6974],"imbi":[3.1422,101.7100],
   "bangsar":[3.1292,101.6713],"pavilion / bukit bintang":[3.1488,101.7132],"bukit bintang":[3.1488,101.7132],
   "pj old town":[3.0872,101.6461],"dataran merdeka":[3.1480,101.6937],"chow kit":[3.1636,101.6980],
@@ -410,28 +411,39 @@ function normalizeItem(row, idx) {
   
   return item;
 }
+async function fetchSheetData() {
+  const loading = document.getElementById('loadingState');
+  try {
+    const response = await fetch(API_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    let text = await response.text();
+    // Strip Google's security wrapper text
+    const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    const json = JSON.parse(jsonString);
+    
+    // Map rows from the visualization table format
+    const cols = json.table.cols.map(c => c.label || c.id);
+    const raw = json.table.rows.map(r => {
+      const obj = {};
+      r.c.forEach((cell, i) => {
+        obj[cols[i] || `col_${i}`] = cell ? (cell.v ?? '') : '';
+      });
+      return obj;
+    });
 
-async function fetchSheetData(){
-  const loading=document.getElementById('loadingState');
-  try{
-    const response=await fetch(API_URL,{cache:'no-store'});
-    if(!response.ok)throw new Error(`HTTP ${response.status}. Your Google Sheet may not be public.`);
-    const raw=await response.json();
-    if(!Array.isArray(raw)||!raw.length)throw new Error('The Google Sheet returned no restaurant rows.');
-    restaurants=raw.map(normalizeItem).filter(x=>x.name);
+    if (!Array.isArray(raw) || !raw.length) throw new Error('No rows returned.');
+
+    restaurants = raw.map(normalizeItem).filter(x => x.name);
     loading.classList.add('hidden');
     document.getElementById('pinContainer').classList.remove('hidden');
     buildFilterOptions();
     renderGrid();
-  }catch(err){
+  } catch (err) {
     console.error(err);
     loading.classList.add('hidden');
     document.getElementById('errorBanner').classList.remove('hidden');
-    document.getElementById('errorMessage').textContent=err.message;
-    document.getElementById('pinContainer').classList.remove('hidden');
-    document.getElementById('pinContainer').innerHTML='';
-    document.getElementById('noResults').classList.remove('hidden');
-    document.getElementById('noResults').querySelector('h3').textContent='Your directory is ready — the live data just needs reconnecting.';
+    document.getElementById('errorMessage').textContent = err.message;
   }
 }
 

@@ -359,59 +359,49 @@ function cleanHeaderKey(k) {
 function normalize(v){ return String(v ?? '').trim().toLowerCase(); }
 function escapeHtml(v){ return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 
-// --- FIXED PRICE NORMALIZATION ---
-function normalizePrice(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return 'RM-RM';
-
-  // Handles $, $$, $$$, $$$$ -> RM, RM-RM, RM-RM-RM
-  if (/^\$+$/.test(s)) {
-    const count = Math.min(s.length, 4);
-    return Array(count).fill('RM').join('-');
-  }
-
-  // Handles RMRM, RMRMRM -> RM-RM, RM-RM-RM
-  const cleanRM = s.toUpperCase().replace(/[\s\-]/g, '');
-  if (/^(RM)+$/.test(cleanRM)) {
-    const count = Math.min(cleanRM.length / 2, 4);
-    return Array(count).fill('RM').join('-');
-  }
-
-  // Handles tier numbers 1, 2, 3, 4
-  if (/^[1-4]$/.test(s)) {
-    return Array(parseInt(s)).fill('RM').join('-');
-  }
-
-  return s; 
-}
-
-// Extracts numeric values for spend calculations (e.g. "RM 40 - RM 80" -> {min: 40, max: 80})
-function parseSpendRange(priceStr, spendStr) {
-  const combined = (priceStr + ' ' + spendStr).toLowerCase();
-  const numbers = combined.match(/\d+/g)?.map(Number) || [];
-  
-  if (numbers.length === 0) return { min: null, max: null };
-  if (numbers.length === 1) return { min: numbers[0], max: numbers[0] };
-  return { min: Math.min(...numbers), max: Math.max(...numbers) };
-}
-
-function parseScore(v){
-  const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g,''));
-  return isNaN(n) ? null : n;
-}
-
 function getField(item, ...keys){
   for(const k of keys){ if(item[k] !== undefined && String(item[k]).trim() !== '') return String(item[k]).trim(); }
   return '';
 }
 
 function isTruthy(v){ return /yes|true|1|verified|recommended|new|trending/i.test(String(v || '')); }
+function parseScore(v){ const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g,'')); return isNaN(n) ? null : n; }
+
+// --- BULLETPROOF PRICE FORMATTER ---
+function formatDisplayPrice(priceRaw, spendRaw) {
+  const p = priceRaw.trim();
+  const s = spendRaw.trim();
+
+  if (s && p) return `${s} (${formatTierTag(p)})`;
+  if (s) return s;
+  if (p) return formatTierTag(p);
+  return 'RM-RM'; // Default fallback so price is NEVER invisible
+}
+
+function formatTierTag(p) {
+  if (/^\$+$/.test(p)) return 'RM'.repeat(Math.min(p.length, 3));
+  if (/^[1-3]$/.test(p)) return 'RM'.repeat(parseInt(p));
+  return p;
+}
+
+function normalizePriceTier(priceRaw, spendRaw) {
+  const combined = (priceRaw + ' ' + spendRaw).toLowerCase();
+  if (combined.includes('$$$') || combined.includes('rm-rm-rm') || combined.includes('100+')) return 'RM-RM-RM';
+  if (combined.includes('$$') || combined.includes('rm-rm') || combined.includes('50')) return 'RM-RM';
+  if (combined.includes('$') || combined.includes('rm') || combined.includes('under')) return 'RM';
+  return 'RM-RM';
+}
+
+function parseSpendNumbers(str) {
+  const nums = str.match(/\d+/g)?.map(Number) || [];
+  if (!nums.length) return { min: null, max: null };
+  return { min: Math.min(...nums), max: Math.max(...nums) };
+}
 
 function normalizeItem(row, idx) {
   const item = {};
   Object.keys(row).forEach(k => {
-    const key = cleanHeaderKey(k);
-    item[key] = String(row[k] ?? '').trim();
+    item[cleanHeaderKey(k)] = String(row[k] ?? '').trim();
   });
 
   item.id = idx;
@@ -423,11 +413,14 @@ function normalizeItem(row, idx) {
   item.why = getField(item, 'why_it_s_on_vibe_check', 'editorial_status') || 'A KL dining spot worth discovering.';
   item.desc = getField(item, 'data_notes', 'why_it_s_on_vibe_check') || item.why;
   
-  // Specific Column Mappings for Price
-  item.price_raw = getField(item, 'price');
-  item.price_text = getField(item, 'typical_spend_per_person');
-  item.price = normalizePrice(item.price_raw);
+  // Robust Price Extraction
+  item.price_raw = getField(item, 'price', 'price_range', 'budget');
+  item.price_spend = getField(item, 'typical_spend_per_person', 'typical_spend', 'spend', 'price_text');
   
+  // Both formatted for display & tier-mapped for filtering
+  item.display_price = formatDisplayPrice(item.price_raw, item.price_spend);
+  item.price = normalizePriceTier(item.price_raw, item.price_spend);
+
   item.seating = normalize(getField(item, 'seating', 'outdoor')) || 'indoor';
   item.best_for = getField(item, 'best_for') || item.cat_l2 || item.cat_l1;
   item.halal = getField(item, 'halal') || 'Not specified';
@@ -467,7 +460,6 @@ async function fetchSheetData() {
     let headers = json.table.cols.map(c => c.label ? cleanHeaderKey(c.label) : '');
     let startRowIndex = 0;
 
-    // Fallback if Google omitted label headers
     if (!headers.some(h => h.length > 0)) {
       headers = rawRows[0].c.map(cell => cleanHeaderKey(cell ? (cell.v ?? cell.f ?? '') : ''));
       startRowIndex = 1;
@@ -555,37 +547,28 @@ function semanticMatch(r, q){
   return (maps[q] || []).some(k => r.searchText.includes(k));
 }
 
-// --- ACCURATE PRICE FILTER MATCHING ---
 function priceMatch(r, p){
   if (!p) return true;
 
   const pNorm = p.toLowerCase();
-  const rPriceNorm = r.price.toLowerCase().replace(/\s+/g, '');
   
-  // 1. Tier Match (RM, RM-RM, RM-RM-RM)
   if (pNorm === 'rm' || pNorm === 'rm-rm' || pNorm === 'rm-rm-rm') {
-    if (rPriceNorm === pNorm) return true;
-    if (pNorm === 'rm' && (rPriceNorm === '$' || rPriceNorm === '1')) return true;
-    if (pNorm === 'rm-rm' && (rPriceNorm === '$$' || rPriceNorm === '2')) return true;
-    if (pNorm === 'rm-rm-rm' && (rPriceNorm === '$$$' || rPriceNorm === '$$$$' || rPriceNorm === '3' || rPriceNorm === '4')) return true;
+    return r.price.toLowerCase() === pNorm;
   }
 
-  // 2. Numeric Range Match (under50, 50-100, 100plus)
-  const range = parseSpendRange(r.price_raw, r.price_text);
+  const spendNums = parseSpendNumbers(r.price_spend || r.price_raw);
   
   if (p === 'under50') {
-    if (range.min !== null && range.min < 50) return true;
-    if (rPriceNorm === 'rm' || rPriceNorm === '$' || rPriceNorm === '1') return true;
+    if (spendNums.min !== null) return spendNums.min < 50;
+    return r.price === 'RM';
   }
   if (p === '50-100') {
-    if (range.min !== null && range.max !== null) {
-      if (range.min <= 100 && range.max >= 50) return true;
-    }
-    if (rPriceNorm === 'rm-rm' || rPriceNorm === '$$' || rPriceNorm === '2') return true;
+    if (spendNums.min !== null && spendNums.max !== null) return spendNums.min <= 100 && spendNums.max >= 50;
+    return r.price === 'RM-RM';
   }
   if (p === '100plus') {
-    if (range.max !== null && range.max >= 100) return true;
-    if (rPriceNorm === 'rm-rm-rm' || rPriceNorm === '$$$' || rPriceNorm === '$$$$' || rPriceNorm === '3' || rPriceNorm === '4') return true;
+    if (spendNums.max !== null) return spendNums.max >= 100;
+    return r.price === 'RM-RM-RM';
   }
 
   return r.searchText.includes(pNorm);
@@ -641,9 +624,6 @@ function createCard(r){
     r.new_spot && badge('🆕 New','bg-emerald-50 text-emerald-700'),
     r.trending && badge('🔥 Trending','bg-rose-50 text-rose-700')
   ].filter(Boolean).join('');
-  
-  // Show Typical Spend if available, otherwise tier
-  const displayPrice = r.price_text ? escapeHtml(r.price_text) : escapeHtml(r.price);
 
   card.innerHTML = `
     <div class="relative aspect-[4/3] bg-slate-100 overflow-hidden">
@@ -662,7 +642,7 @@ function createCard(r){
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
           <h3 class="font-extrabold text-slate-900 text-lg leading-tight">${escapeHtml(r.name)}</h3>
-          <p class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(r.area)} · ${displayPrice}</p>
+          <p class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(r.area)} · <span class="font-semibold text-slate-700">${escapeHtml(r.display_price)}</span></p>
         </div>
       </div>
       <div class="flex flex-wrap gap-1.5 mt-3">
@@ -694,7 +674,7 @@ function openPinModal(r){
   document.getElementById('modalImg').src = r.img;
   document.getElementById('modalTitle').textContent = r.name;
   document.getElementById('modalArea').textContent = r.area;
-  document.getElementById('modalPrice').textContent = r.price_text ? `${r.price} (${r.price_text})` : r.price;
+  document.getElementById('modalPrice').textContent = r.display_price;
   document.getElementById('modalSeating').textContent = r.seating === 'both' ? 'Indoor + Outdoor' : r.seating;
   document.getElementById('modalScore').textContent = r.vibe_score ? Number(r.vibe_score).toFixed(1) : '—';
   document.getElementById('modalWhy').textContent = r.why;
@@ -776,6 +756,7 @@ async function handleFormSubmit(event){
   } finally {
     btn.disabled = false; btn.textContent = 'Submit recommendation →';
   }
-}</script>
+}
+  </script>
 </body>
 </html>

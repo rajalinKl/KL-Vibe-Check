@@ -1,735 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KL Vibe Check — Dining Directory</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>KL Vibe Check — Your shortcut to eating well in KL</title>
+<meta name="description" content="Curated Kuala Lumpur restaurants, real vibes and better dining decisions.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts & Lucide Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Leaflet OpenStreetMap CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        /* Uniform Fixed-Size Card Grid */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-            gap: 1.25rem;
-            align-items: stretch;
-        }
-        @media (min-width: 640px)  { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (min-width: 1024px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (min-width: 1280px) { .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-
-        #mapContainer {
-            height: 440px;
-            width: 100%;
-            border-radius: 1.5rem;
-            z-index: 10;
-        }
-
-        .vibe-marker-pin {
-            width: 36px;
-            height: 36px;
-            border-radius: 50% 50% 50% 0;
-            background: #E11D48;
-            position: absolute;
-            transform: rotate(-45deg);
-            left: 50%;
-            top: 50%;
-            margin: -20px 0 0 -18px;
-            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #FFFFFF;
-        }
-
-        .vibe-marker-emoji {
-            transform: rotate(45deg);
-            font-size: 16px;
-            line-height: 1;
-            user-select: none;
-        }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+<style>
+  body{font-family:'Plus Jakarta Sans',sans-serif}
+  .card-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:1.25rem}
+  @media(min-width:640px){.card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(min-width:1024px){.card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(min-width:1280px){.card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  #mapContainer{height:520px;width:100%;border-radius:1.5rem;z-index:10}
+  .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+  .soft-shadow{box-shadow:0 12px 35px rgba(15,23,42,.07)}
+  .hero-gradient{background:
+    radial-gradient(circle at 10% 15%,rgba(244,63,94,.16),transparent 28%),
+    radial-gradient(circle at 90% 10%,rgba(251,191,36,.13),transparent 25%),
+    linear-gradient(135deg,#0f172a 0%,#1e293b 100%)}
+  .chip-active{background:#0f172a!important;color:white!important;border-color:#0f172a!important}
+  .vibe-card{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+  .vibe-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(15,23,42,.09)}
+  .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .modal-scroll{max-height:90vh;overflow-y:auto}
+  .vibe-score{background:linear-gradient(135deg,#0f172a,#334155)}
+</style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased selection:bg-rose-500 selection:text-white min-h-screen">
 
-    <!-- Header & Navigation -->
-   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3.5 shadow-sm">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    
-       <!-- Logo -->
-    <div class="flex items-center cursor-pointer" onclick="resetFilters()">
-        <img 
-            src="ChatGPT Image Aug 11, 2026, 12_08_39 AM.png"
-            alt="KL Vibe Check — Curated Kuala Lumpur Dining Directory"
-            class="h-12 md:h-16 w-auto object-contain"
-            >
-    </div>     
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-            <!-- Controls: Search, Seating Filter & Actions -->
-            <div class="w-full md:w-auto flex flex-wrap items-center gap-2 md:gap-3">
-                <div class="relative flex-1 md:w-64">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterPlaces()" placeholder="Search spots, food, areas..." class="w-full pl-10 pr-4 py-2 bg-slate-100 focus:bg-white border border-transparent focus:border-rose-400 rounded-full text-sm outline-none transition shadow-inner">
-                </div>
-
-                <!-- Seating Filter Control -->
-                <div class="flex items-center bg-slate-100 p-1 rounded-full text-xs font-bold border border-slate-200">
-                    <button onclick="setSeatingFilter('all')" id="seat-btn-all" class="seating-btn active bg-slate-900 text-white px-3 py-1.5 rounded-full transition">All</button>
-                    <button onclick="setSeatingFilter('indoor')" id="seat-btn-indoor" class="seating-btn text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full transition">🏠 Indoor</button>
-                    <button onclick="setSeatingFilter('outdoor')" id="seat-btn-outdoor" class="seating-btn text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full transition">🌿 Outdoor</button>
-                </div>
-
-                <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-1.5 bg-rose-500 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-rose-600 transition shadow-sm whitespace-nowrap">
-                    <i data-lucide="map" class="w-4 h-4"></i> Map View
-                </button>
-
-                <button onclick="openSuggestModal()" class="flex items-center gap-1.5 bg-slate-900 text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-slate-800 transition shadow-sm whitespace-nowrap">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> Suggest
-                </button>
-            </div>
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8">
+    <div class="min-h-[76px] flex items-center justify-between gap-3">
+      <button onclick="resetFilters()" class="flex items-center gap-3 min-w-0">
+        <img src="ChatGPT Image Aug 11, 2026, 12_08_39 AM.png"
+             alt="KL Vibe Check"
+             class="h-12 md:h-14 w-auto object-contain"
+             onerror="this.style.display='none'">
+        <div class="hidden sm:block text-left">
+          <div class="font-extrabold text-slate-900 tracking-tight">KL Vibe Check</div>
+          <div class="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Curated Kuala Lumpur Dining</div>
         </div>
+      </button>
 
-        <!-- 5 Main Vibe Bar (Level 1) -->
-        <div class="max-w-7xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-sm font-semibold" id="catL1Container">
-            <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm flex-shrink-0">
-                All Vibes
-            </button>
-            <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
-            <!-- Dynamic Max 5 Vibe Buttons Render Here -->
-        </div>
+      <div class="hidden md:flex items-center gap-2">
+        <button onclick="scrollToSection('findSection')" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900">Find a spot</button>
+        <button onclick="scrollToSection('exploreSection')" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900">Explore</button>
+        <button onclick="openSuggestModal()" class="px-4 py-2.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">
+          + Suggest a spot
+        </button>
+      </div>
 
-        <!-- Level 2 Sub-Filters (Appears when Main Vibe selected) -->
-        <div id="catL2Wrapper" class="max-w-7xl mx-auto mt-2 hidden transition-all duration-300">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60" id="catL2Container">
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
-        <!-- Error Banner -->
-        <div id="errorBanner" class="hidden bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 text-sm">
-            <div class="flex items-center gap-2 font-bold mb-1">
-                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i> Unable to load Google Sheet data
-            </div>
-            <p id="errorMessage" class="text-xs text-rose-600">Ensure your sheet is set to "Anyone with the link can view".</p>
-        </div>
-
-        <!-- Loading Spinner -->
-        <div id="loadingState" class="py-24 text-center text-slate-400">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-rose-500 mb-3"></div>
-            <p class="text-sm font-semibold text-slate-600">Loading directory spots...</p>
-        </div>
-
-        <!-- Interactive Map Section -->
-        <section id="mapSection" class="hidden">
-            <div class="bg-white p-3 rounded-3xl border border-slate-200/80 shadow-md">
-                <div id="mapContainer"></div>
-            </div>
-        </section>
-
-        <!-- Uniform Cards Grid Section -->
-        <section id="pinBoardSection" class="hidden">
-            <div class="flex items-center justify-between mb-4">
-                <h2 id="boardTitle" class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    ✨ Featured Dining Spots
-                </h2>
-                <span id="pinCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1 rounded-full">0 spots</span>
-            </div>
-            <div id="pinContainer" class="card-grid"></div>
-        </section>
-
-        <div id="noResults" class="hidden py-20 text-center text-slate-400">
-            <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 stroke-1"></i>
-            <p class="text-lg font-medium text-slate-600">No dining spots found matching your filter selection.</p>
-            <button onclick="resetFilters()" class="mt-3 text-xs font-bold bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition shadow-sm">Clear All Filters</button>
-        </div>
-    </main>
-
-    <!-- Detail Lightbox Modal -->
-    <div id="pinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden transition-opacity" onclick="closePinModal(event)">
-        <div class="bg-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-2 max-h-[85vh]" onclick="event.stopPropagation()">
-            <div class="relative bg-slate-900 flex items-center justify-center overflow-hidden min-h-[280px]">
-                <img id="modalImg" src="" alt="" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-            </div>
-            <div class="p-6 flex flex-col justify-between bg-white overflow-y-auto">
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <span id="modalCategory" class="bg-rose-50 text-rose-600 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Category</span>
-                        <button onclick="closePinModal()" class="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                    <h2 id="modalTitle" class="text-2xl font-extrabold text-slate-900 leading-tight mb-2">Spot Name</h2>
-                    
-                    <div class="flex items-center gap-3 text-xs font-semibold text-slate-500 mb-4">
-                        <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i> <span id="modalArea">Area</span></span>
-                        <span>•</span>
-                        <span id="modalSeating" class="bg-slate-100 px-2.5 py-0.5 rounded-full text-slate-700">Seating</span>
-                    </div>
-
-                    <p id="modalDesc" class="text-sm text-slate-600 leading-relaxed font-normal mb-6">Description goes here...</p>
-                </div>
-
-                <div class="pt-4 border-t border-slate-100 flex items-center gap-3">
-                    <button id="modalBookmarkBtn" onclick="toggleSaveSpot(event)" class="flex-1 border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold py-2.5 rounded-2xl text-xs transition flex items-center justify-center gap-2">
-                        <i data-lucide="bookmark" class="w-4 h-4"></i> Save Spot
-                    </button>
-                    <a id="modalMapLink" href="#" target="_blank" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs transition text-center shadow-md shadow-rose-500/20 flex items-center justify-center gap-2">
-                        Get Directions <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
+      <button onclick="openSuggestModal()" class="md:hidden bg-slate-900 text-white rounded-full px-3 py-2 text-xs font-bold">Suggest</button>
     </div>
+  </div>
+</header>
 
-    <!-- Suggest Spot Modal -->
-    <div id="suggestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-slate-100">
-            <button onclick="closeSuggestModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            
-            <div class="mb-5">
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-5 h-5 text-rose-500"></i> Suggest a KL Spot
-                </h2>
-                <p class="text-xs text-slate-500 mt-1">Know a new viral spot or hidden gem in KL? Send it over!</p>
-            </div>
+<main>
 
-            <form id="suggestForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Place Name</label>
-                    <input type="text" name="place_name" required placeholder="e.g. Tone Cafe" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                </div>
+<!-- HERO / DECISION FIRST -->
+<section class="hero-gradient text-white">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-14 md:py-20">
+    <div class="max-w-3xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-bold mb-5">
+        <span>✨</span> Curated for KL
+      </div>
+      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.02]">
+        Your shortcut to<br><span class="text-rose-400">eating well in KL.</span>
+      </h1>
+      <p class="mt-5 text-slate-300 text-base md:text-lg max-w-2xl leading-relaxed">
+        Curated restaurants. Real vibes. Less scrolling. Tell us what you're looking for and we'll help you choose.
+      </p>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Category</label>
-                        <input type="text" name="vibe_category" required placeholder="e.g. Cafe / Speakeasy" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Area</label>
-                        <input type="text" name="area" required placeholder="e.g. Bangsar" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Why should it be listed?</label>
-                    <textarea name="description" rows="2" placeholder="Tell us what makes this spot special..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 transition"></textarea>
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm rounded-xl transition shadow-md shadow-rose-500/20 flex items-center justify-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation
-                </button>
-            </form>
-
-            <div id="formSuccessMessage" class="hidden text-center py-6">
-                <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500 mx-auto mb-2"></i>
-                <h3 class="text-base font-bold text-slate-900">Thank you!</h3>
-                <p class="text-xs text-slate-500 mt-1">Your suggestion has been sent. We'll review and add it to the list!</p>
-            </div>
+      <div id="findSection" class="mt-8 bg-white rounded-3xl p-3 md:p-4 shadow-2xl max-w-3xl">
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+          <input id="searchInput" oninput="renderGrid()" type="text"
+                 placeholder='Try: "date night in Bangsar" or "quiet Italian under RM100"'
+                 class="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm md:text-base text-slate-900 outline-none focus:border-rose-400">
         </div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button onclick="quickSearch('date night')" class="quick-chip">❤️ Date night</button>
+          <button onclick="quickSearch('family')" class="quick-chip">👨‍👩‍👧 Family</button>
+          <button onclick="quickSearch('under RM50')" class="quick-chip">💸 Under RM50</button>
+          <button onclick="quickSearch('hidden gem')" class="quick-chip">👀 Hidden gem</button>
+          <button onclick="quickSearch('outdoor')" class="quick-chip">🌿 Outdoor</button>
+        </div>
+      </div>
     </div>
-
-    <script>
-        const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-        const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
-
-        const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop';
-
-        const areaCoordinates = {
-            "chinatown": [3.1439, 101.6974],
-            "petaling street": [3.1439, 101.6974],
-            "imbi": [3.1422, 101.7100],
-            "bangsar": [3.1292, 101.6713],
-            "pavilion / bukit bintang": [3.1488, 101.7132],
-            "bukit bintang": [3.1488, 101.7132],
-            "pj old town": [3.0872, 101.6461],
-            "dataran merdeka": [3.1480, 101.6937],
-            "chow kit": [3.1636, 101.6980],
-            "segambut": [3.1856, 101.6606],
-            "desa sri hartamas": [3.1610, 101.6508],
-            "hartamas": [3.1610, 101.6508],
-            "ttdi": [3.1367, 101.6219],
-            "kl city centre": [3.1579, 101.7116],
-            "damansara jaya": [3.1278, 101.6163],
-            "klcc": [3.1579, 101.7116],
-            "bukit damansara": [3.1500, 101.6620]
-        };
-
-        let restaurants = [];
-        let categoryHierarchy = {};
-        let selectedCatL1 = 'all';
-        let selectedCatL2 = 'all';
-        let currentSeatingFilter = 'all';
-        
-        let map = null;
-        let mapMarkers = [];
-        let isMapVisible = false;
-
-        function openSuggestModal() {
-            document.getElementById('suggestModal').classList.remove('hidden');
-            document.getElementById('suggestForm').classList.remove('hidden');
-            document.getElementById('formSuccessMessage').classList.add('hidden');
-            lucide.createIcons();
-        }
-
-        function closeSuggestModal() {
-            document.getElementById('suggestModal').classList.add('hidden');
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Sending...";
-
-            const formData = new FormData(event.target);
-
-            try {
-                const response = await fetch("https://formspree.io/f/mqakvode", {
-                    method: "POST",
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                if (response.ok) {
-                    document.getElementById('suggestForm').classList.add('hidden');
-                    document.getElementById('formSuccessMessage').classList.remove('hidden');
-                    event.target.reset();
-                } else {
-                    alert("There was an issue sending your recommendation. Please try again.");
-                }
-            } catch (err) {
-                console.error("Form error:", err);
-                alert("Network error. Please try again later.");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Submit Recommendation`;
-                lucide.createIcons();
-            }
-        }
-
-        function initMap() {
-            if (map) return;
-            map = L.map('mapContainer').setView([3.1390, 101.6869], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-        }
-
-        function getEmojiForKey(catKey) {
-            const key = (catKey || '').toLowerCase();
-            if (key.includes('rooftop')) return '🌆';
-            if (key.includes('insta')) return '📸';
-            if (key.includes('pet')) return '🐾';
-            if (key.includes('nature') || key.includes('outdoor')) return '🌿';
-            if (key.includes('halal')) return '✨';
-            if (key.includes('street') || key.includes('night')) return '🌙';
-            if (key.includes('speak') || key.includes('bar') || key.includes('cocktail')) return '🍸';
-            if (key.includes('cafe') || key.includes('coffee')) return '☕';
-            return '📍';
-        }
-
-        function createEmojiIcon(catKey) {
-            const emoji = getEmojiForKey(catKey);
-            return L.divIcon({
-                className: 'custom-vibe-icon',
-                html: `<div class="vibe-marker-pin"><span class="vibe-marker-emoji">${emoji}</span></div>`,
-                iconSize: [36, 36],
-                iconAnchor: [18, 36],
-                popupAnchor: [0, -32]
-            });
-        }
-
-        function updateMapMarkers(items) {
-            if (!map) initMap();
-
-            mapMarkers.forEach(marker => map.removeLayer(marker));
-            mapMarkers = [];
-
-            items.forEach(item => {
-                const areaKey = (item.area || '').toLowerCase().trim();
-                const catKey = (item.cat_l2 || item.cat_l1 || '').toLowerCase().trim();
-                const coords = areaCoordinates[areaKey] || [3.1390 + (Math.random() - 0.5) * 0.05, 101.6869 + (Math.random() - 0.5) * 0.05];
-                const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-
-                const popupContent = `
-                    <div style="width: 180px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                        <img src="${item.img}" onerror="this.src='${FALLBACK_IMAGE}'" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;">
-                        <span style="font-size: 10px; font-weight: bold; color: #E11D48; text-transform: uppercase;">${item.area || 'KL'}</span>
-                        <h4 style="font-size: 13px; font-weight: bold; margin: 2px 0 4px 0; color: #0F172A;">${item.name}</h4>
-                        <a href="${gmapsUrl}" target="_blank" style="display: block; text-align: center; background-color: #E11D48; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 6px;">Directions ➔</a>
-                    </div>
-                `;
-
-                const markerIcon = createEmojiIcon(catKey);
-                const marker = L.marker(coords, { icon: markerIcon }).addTo(map).bindPopup(popupContent);
-                mapMarkers.push(marker);
-            });
-        }
-
-        function toggleMapView() {
-            const mapSec = document.getElementById('mapSection');
-            const toggleBtn = document.getElementById('mapToggleBtn');
-
-            isMapVisible = !isMapVisible;
-
-            if (isMapVisible) {
-                mapSec.classList.remove('hidden');
-                toggleBtn.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4"></i> Board View`;
-                initMap();
-                setTimeout(() => map.invalidateSize(), 200);
-            } else {
-                mapSec.classList.add('hidden');
-                toggleBtn.innerHTML = `<i data-lucide="map" class="w-4 h-4"></i> Map View`;
-            }
-            lucide.createIcons();
-        }
-
-        async function fetchSheetData() {
-            const loadingState = document.getElementById('loadingState');
-            const errorBanner = document.getElementById('errorBanner');
-            
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`HTTP Error ${response.status}. Ensure sheet is set to public access.`);
-                
-                const rawData = await response.json();
-                
-                if (!Array.isArray(rawData) || rawData.length === 0) {
-                    throw new Error("Sheet returned empty rows.");
-                }
-
-                categoryHierarchy = {};
-
-                restaurants = rawData.map((row, idx) => {
-                    let cleanItem = {};
-
-                    Object.keys(row).forEach(key => {
-                        const cleanKey = key.trim().toLowerCase().replace(/[\s\-_]+/g, '_');
-                        let val = row[key] ? String(row[key]).trim() : '';
-                        cleanItem[cleanKey] = val;
-                    });
-
-                    const l1 = cleanItem.cat_l1 || cleanItem.catl1 || 'Curated Vibes';
-                    const l2 = cleanItem.cat_l2 || cleanItem.catl2 || cleanItem.tag || '';
-                    
-                    let seating = (cleanItem.seating || '').toLowerCase();
-                    if (!seating) {
-                        const checkText = `${cleanItem.desc} ${cleanItem.tag} ${l2}`.toLowerCase();
-                        if (checkText.includes('outdoor') || checkText.includes('garden') || checkText.includes('rooftop') || checkText.includes('patio')) {
-                            seating = 'outdoor';
-                        } else {
-                            seating = 'indoor';
-                        }
-                    }
-
-                    cleanItem.id = idx;
-                    cleanItem.name = cleanItem.name || cleanItem.place_name || '';
-                    cleanItem.cat_l1 = l1;
-                    cleanItem.cat_l2 = l2;
-                    cleanItem.seating = seating;
-                    cleanItem.img = cleanItem.img || FALLBACK_IMAGE;
-
-                    if (l1) {
-                        if (!categoryHierarchy[l1]) {
-                            categoryHierarchy[l1] = new Set();
-                        }
-                        if (l2) {
-                            l2.split(',').forEach(sub => categoryHierarchy[l1].add(sub.trim()));
-                        }
-                    }
-
-                    return cleanItem;
-                }).filter(item => item.name);
-
-                loadingState.classList.add('hidden');
-                document.getElementById('pinBoardSection').classList.remove('hidden');
-                buildCategoryUI();
-                renderGrid();
-            } catch (err) {
-                console.error("Error fetching sheet:", err);
-                loadingState.classList.add('hidden');
-                errorBanner.classList.remove('hidden');
-                document.getElementById('errorMessage').innerText = err.message;
-            }
-        }
-
-        /* Build Max 5 Main Vibe Buttons */
-        function buildCategoryUI() {
-            const catL1Container = document.getElementById('catL1Container');
-            
-            catL1Container.innerHTML = `
-                <button onclick="selectCatL1('all')" id="btn-catl1-all" class="cat-l1-btn active bg-slate-900 text-white px-4 py-2 rounded-full whitespace-nowrap transition shadow-sm flex-shrink-0">
-                    All Vibes
-                </button>
-                <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
-            `;
-
-            const mainVibes = Object.keys(categoryHierarchy).slice(0, 5);
-
-            mainVibes.sort().forEach(l1Cat => {
-                const btn = document.createElement('button');
-                btn.id = `btn-catl1-${slugify(l1Cat)}`;
-                btn.className = "cat-l1-btn bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-full border border-slate-200 whitespace-nowrap transition flex-shrink-0";
-                btn.innerText = l1Cat;
-                btn.onclick = () => selectCatL1(l1Cat);
-                catL1Container.appendChild(btn);
-            });
-        }
-
-        function selectCatL1(l1Cat) {
-            selectedCatL1 = l1Cat;
-            selectedCatL2 = 'all';
-
-            document.querySelectorAll('.cat-l1-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
-                btn.classList.add('bg-white', 'text-slate-800');
-            });
-
-            const activeBtn = document.getElementById(`btn-catl1-${slugify(l1Cat)}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-white', 'text-slate-800');
-                activeBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
-            }
-
-            renderCatL2Bar();
-            renderGrid();
-        }
-
-        function renderCatL2Bar() {
-            const wrapper = document.getElementById('catL2Wrapper');
-            const container = document.getElementById('catL2Container');
-
-            if (selectedCatL1 === 'all' || !categoryHierarchy[selectedCatL1] || categoryHierarchy[selectedCatL1].size === 0) {
-                wrapper.classList.add('hidden');
-                container.innerHTML = '';
-                return;
-            }
-
-            wrapper.classList.remove('hidden');
-            
-            let l2Html = `
-                <span class="text-slate-400 font-bold px-2 flex items-center gap-1 uppercase tracking-wider text-[10px]">
-                    <i data-lucide="filter" class="w-3 h-3"></i> Sub-Filters:
-                </span>
-                <button onclick="selectCatL2('all')" id="btn-catl2-all" class="cat-l2-btn active bg-slate-800 text-white px-3 py-1 rounded-xl whitespace-nowrap transition">
-                    All ${selectedCatL1}
-                </button>
-            `;
-
-            Array.from(categoryHierarchy[selectedCatL1]).sort().forEach(l2Cat => {
-                l2Html += `
-                    <button onclick="selectCatL2('${escapeQuotes(l2Cat)}')" id="btn-catl2-${slugify(l2Cat)}" class="cat-l2-btn bg-white hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-xl border border-slate-200/60 whitespace-nowrap transition">
-                        ${l2Cat}
-                    </button>
-                `;
-            });
-
-            container.innerHTML = l2Html;
-            lucide.createIcons();
-        }
-
-        function selectCatL2(l2Cat) {
-            selectedCatL2 = l2Cat;
-
-            document.querySelectorAll('.cat-l2-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-800', 'text-white');
-                btn.classList.add('bg-white', 'text-slate-700');
-            });
-
-            const activeBtn = document.getElementById(`btn-catl2-${slugify(l2Cat)}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-white', 'text-slate-700');
-                activeBtn.classList.add('bg-slate-800', 'text-white');
-            }
-
-            renderGrid();
-        }
-
-        function setSeatingFilter(type) {
-            currentSeatingFilter = type;
-            document.querySelectorAll('.seating-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-900', 'text-white');
-                btn.classList.add('text-slate-600');
-            });
-            const activeBtn = document.getElementById(`seat-btn-${type}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-600');
-                activeBtn.classList.add('bg-slate-900', 'text-white');
-            }
-            renderGrid();
-        }
-
-        /* Uniform Card Generator (Identical Sizes & Aspect Ratio) */
-        function createCard(item) {
-            const card = document.createElement('div');
-            card.className = "group relative bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col h-full";
-            
-            const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-            const displayBadge = item.cat_l2 || item.cat_l1 || 'Food Spot';
-
-            card.onclick = () => openPinModal(item);
-
-            card.innerHTML = `
-                <div class="relative overflow-hidden bg-slate-100 aspect-[4/3] w-full flex-shrink-0">
-                    <img src="${item.img}" alt="${item.name}" 
-                         onerror="this.src='${FALLBACK_IMAGE}'" 
-                         class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    
-                    <!-- Top Hover Overlay Action Bar -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-3.5 flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="bg-black/50 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20 tracking-wider uppercase truncate max-w-[140px]">${displayBadge}</span>
-                            <button onclick="toggleSaveSpot(event)" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transition flex items-center gap-1">
-                                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Price Badge -->
-                    <div class="absolute top-3 right-3 group-hover:opacity-0 transition-opacity">
-                        <span class="bg-slate-900/70 backdrop-blur-md text-emerald-400 text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-white/10">${item.price || '$$'}</span>
-                    </div>
-                </div>
-
-                <!-- Pin Footer Info (Stretches flex-1 so all cards match height) -->
-                <div class="p-4 bg-white flex flex-col justify-between flex-1 border-t border-slate-100">
-                    <div>
-                        <div class="flex items-center justify-between gap-2 mb-1">
-                            <h4 class="font-extrabold text-slate-900 text-base leading-tight truncate flex-1">${item.name}</h4>
-                        </div>
-                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal mb-3">${item.desc || 'No detailed description available.'}</p>
-                    </div>
-                    
-                    <div class="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-                        <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1 truncate"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500 flex-shrink-0"></i> ${item.area || 'KL'}</span>
-                        <a href="${gmapsUrl}" target="_blank" onclick="event.stopPropagation()" class="p-2 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 rounded-full transition shadow-sm flex-shrink-0">
-                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                        </a>
-                    </div>
-                </div>
-            `;
-            return card;
-        }
-
-        /* Lightbox Modal */
-        function openPinModal(item) {
-            const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.area + ' Kuala Lumpur')}`;
-            
-            document.getElementById('modalImg').src = item.img;
-            document.getElementById('modalTitle').innerText = item.name;
-            document.getElementById('modalArea').innerText = item.area || 'Kuala Lumpur';
-            document.getElementById('modalCategory').innerText = item.cat_l2 || item.cat_l1 || 'Featured Spot';
-            document.getElementById('modalSeating').innerText = item.seating.toUpperCase() + ' SEATING';
-            document.getElementById('modalDesc').innerText = item.desc || 'No detailed description available.';
-            document.getElementById('modalMapLink').href = gmapsUrl;
-
-            document.getElementById('pinModal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function closePinModal() {
-            document.getElementById('pinModal').classList.add('hidden');
-        }
-
-        function toggleSaveSpot(e) {
-            e.stopPropagation();
-            const btn = e.currentTarget;
-            btn.classList.toggle('bg-emerald-600');
-            btn.innerHTML = btn.classList.contains('bg-emerald-600') 
-                ? `<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved` 
-                : `<i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save`;
-            lucide.createIcons();
-        }
-
-        function renderGrid() {
-            const pinContainer = document.getElementById('pinContainer');
-            const noResults = document.getElementById('noResults');
-
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-
-            pinContainer.innerHTML = '';
-
-            const filtered = restaurants.filter(item => {
-                // Match Cat L1
-                let matchL1 = (selectedCatL1 === 'all') || (item.cat_l1.toLowerCase() === selectedCatL1.toLowerCase());
-
-                // Match Cat L2
-                let matchL2 = (selectedCatL2 === 'all') || (item.cat_l2.toLowerCase().includes(selectedCatL2.toLowerCase()));
-
-                // Match Seating
-                let matchSeating = true;
-                if (currentSeatingFilter === 'indoor') {
-                    matchSeating = item.seating === 'indoor' || item.seating === 'both';
-                } else if (currentSeatingFilter === 'outdoor') {
-                    matchSeating = item.seating === 'outdoor' || item.seating === 'both';
-                }
-
-                // Match Search
-                const matchSearch = !query || 
-                                    (item.name || '').toLowerCase().includes(query) || 
-                                    (item.area || '').toLowerCase().includes(query) || 
-                                    (item.desc || '').toLowerCase().includes(query) ||
-                                    (item.cat_l1 || '').toLowerCase().includes(query) ||
-                                    (item.cat_l2 || '').toLowerCase().includes(query);
-
-                return matchL1 && matchL2 && matchSeating && matchSearch;
-            });
-
-            updateMapMarkers(filtered);
-
-            filtered.forEach(item => {
-                const card = createCard(item);
-                pinContainer.appendChild(card);
-            });
-
-            document.getElementById('pinCount').innerText = `${filtered.length} spots`;
-            noResults.classList.toggle('hidden', filtered.length > 0);
-
-            lucide.createIcons();
-        }
-
-        function filterPlaces() {
-            renderGrid();
-        }
-
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            setSeatingFilter('all');
-            selectCatL1('all');
-        }
-
-        function slugify(text) {
-            return String(text).toLowerCase().replace(/[^a-z0-9]/g, '-');
-        }
-
-        function escapeQuotes(str) {
-            return String(str).replace(/'/g, "\\'");
-        }
-
-        fetchSheetData();
-    </script>
+  </div>
+</section>
+
+<!-- WHAT'S YOUR VIBE -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+  <div class="flex items-end justify-between mb-4">
+    <div>
+      <p class="text-xs font-extrabold uppercase tracking-[.18em] text-rose-500">Start with the occasion</p>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mt-1">What's your vibe?</h2>
+    </div>
+    <button onclick="resetFilters()" class="hidden sm:block text-xs font-bold text-slate-500 hover:text-slate-900">Clear</button>
+  </div>
+  <div id="vibeQuickGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+    <!-- JS -->
+  </div>
+</section>
+
+<!-- LIVE DISCOVERY -->
+<section id="exploreSection" class="max-w-7xl mx-auto px-4 lg:px-8 pb-8">
+  <div class="flex items-end justify-between mb-4">
+    <div>
+      <p class="text-xs font-extrabold uppercase tracking-[.18em] text-rose-500">Explore KL</p>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mt-1">What’s happening now</h2>
+    </div>
+    <button onclick="toggleMapView()" id="mapToggleBtn" class="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-xs font-bold shadow-sm hover:border-slate-300">
+      <i data-lucide="map" class="w-4 h-4"></i> Map
+    </button>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <button onclick="setDiscovery('trending')" class="discovery-btn text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 soft-shadow">
+      <div class="text-xl">🔥</div><div class="font-extrabold text-sm mt-2">Trending</div><div class="text-[11px] text-slate-500 mt-1">What's getting attention</div>
+    </button>
+    <button onclick="setDiscovery('new')" class="discovery-btn text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 soft-shadow">
+      <div class="text-xl">🆕</div><div class="font-extrabold text-sm mt-2">New & noteworthy</div><div class="text-[11px] text-slate-500 mt-1">Fresh spots to try</div>
+    </button>
+    <button onclick="setDiscovery('hidden')" class="discovery-btn text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 soft-shadow">
+      <div class="text-xl">👀</div><div class="font-extrabold text-sm mt-2">Hidden gems</div><div class="text-[11px] text-slate-500 mt-1">Worth knowing about</div>
+    </button>
+    <button onclick="setDiscovery('local')" class="discovery-btn text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 soft-shadow">
+      <div class="text-xl">❤️</div><div class="font-extrabold text-sm mt-2">Local favourites</div><div class="text-[11px] text-slate-500 mt-1">Places worth returning to</div>
+    </button>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 pb-6">
+  <div class="bg-white border border-slate-200 rounded-3xl p-4 soft-shadow">
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+      <div class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mr-2">Refine</div>
+      <select id="areaFilter" onchange="renderGrid()" class="filter-select">
+        <option value="">📍 All areas</option>
+      </select>
+      <select id="priceFilter" onchange="renderGrid()" class="filter-select">
+        <option value="">💰 Any budget</option>
+        <option value="RM">RM — Budget</option>
+        <option value="RM-RM">RM-RM — Casual</option>
+        <option value="RM-RM-RM">RM-RM-RM — Mid-range</option>
+        <option value="RM-RM-RM-RM">RM-RM-RM-RM — Special occasion</option>
+        <option value="under50">Under RM50</option>
+        <option value="50-100">RM50–100</option>
+        <option value="100plus">RM100+</option>
+      </select>
+      <select id="cuisineFilter" onchange="renderGrid()" class="filter-select">
+        <option value="">🍜 Any cuisine</option>
+      </select>
+      <select id="seatingFilter" onchange="renderGrid()" class="filter-select">
+        <option value="">🪑 Any seating</option>
+        <option value="indoor">🏠 Indoor</option>
+        <option value="outdoor">🌿 Outdoor</option>
+      </select>
+      <button onclick="resetFilters()" class="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section id="mapSection" class="hidden max-w-7xl mx-auto px-4 lg:px-8 pb-8">
+  <div class="bg-white p-3 rounded-3xl border border-slate-200 soft-shadow">
+    <div id="mapContainer"></div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 pb-14">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+    <div>
+      <p id="resultEyebrow" class="text-xs font-extrabold uppercase tracking-[.18em] text-rose-500">Curated for you</p>
+      <h2 id="boardTitle" class="text-2xl md:text-3xl font-extrabold text-slate-900">KL Vibe Check Picks</h2>
+      <p id="resultSub" class="text-sm text-slate-500 mt-1">Places worth knowing, not just places going viral.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="sortResults('vibe')" class="sort-btn chip-active">Best vibe</button>
+      <button onclick="sortResults('name')" class="sort-btn">A–Z</button>
+      <span id="pinCount" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full">0 spots</span>
+    </div>
+  </div>
+
+  <div id="loadingState" class="py-20 text-center">
+    <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-rose-500 mb-3"></div>
+    <p class="font-bold text-slate-700">Curating KL's dining spots...</p>
+    <p class="text-xs text-slate-400 mt-1">Loading the latest directory</p>
+  </div>
+
+  <div id="errorBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+    <div class="flex gap-3">
+      <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0"></i>
+      <div>
+        <div class="font-extrabold text-amber-900">The live directory couldn't be loaded.</div>
+        <p id="errorMessage" class="text-xs text-amber-800 mt-1"></p>
+        <p class="text-xs text-amber-700 mt-2"><strong>Tip:</strong> Check that your Google Sheet is public. The page will still show the directory shell instead of looking broken.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="pinContainer" class="card-grid hidden"></div>
+
+  <div id="noResults" class="hidden py-20 text-center">
+    <div class="text-5xl mb-4">🤔</div>
+    <h3 class="text-xl font-extrabold text-slate-900">We couldn't find the right vibe.</h3>
+    <p class="text-sm text-slate-500 mt-2">Try a different area, occasion, budget or search.</p>
+    <button onclick="resetFilters()" class="mt-4 px-5 py-2.5 rounded-full bg-slate-900 text-white text-xs font-bold">Show me everything</button>
+  </div>
+</section>
+
+<!-- COMMUNITY CTA -->
+<section class="bg-slate-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div>
+      <div class="text-2xl md:text-3xl font-extrabold">Know somewhere genuinely worth eating?</div>
+      <p class="text-slate-400 text-sm mt-2 max-w-xl">Help us discover KL's hidden gems. Tell us what makes the place special and who it is perfect for.</p>
+    </div>
+    <button onclick="openSuggestModal()" class="flex-shrink-0 px-6 py-3 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-sm">Suggest a KL spot →</button>
+  </div>
+</section>
+
+</main>
+
+<!-- DETAIL MODAL -->
+<div id="pinModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-md p-3 md:p-6" onclick="closePinModal(event)">
+  <div class="bg-white w-full max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-2xl modal-scroll" onclick="event.stopPropagation()">
+    <div class="grid grid-cols-1 md:grid-cols-2">
+      <div class="relative bg-slate-900 min-h-[300px]">
+        <img id="modalImg" src="" alt="" class="w-full h-full object-cover min-h-[300px]" onerror="this.src=FALLBACK_IMAGE">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+        <button onclick="closePinModal()" class="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white backdrop-blur-md"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 md:p-8">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div id="modalBadges" class="flex flex-wrap gap-1.5 mb-3"></div>
+            <h2 id="modalTitle" class="text-3xl font-extrabold text-slate-900 leading-tight"></h2>
+            <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500 mt-2">
+              <span>📍 <span id="modalArea"></span></span>
+              <span>•</span><span id="modalPrice"></span>
+              <span>•</span><span id="modalSeating"></span>
+            </div>
+          </div>
+          <div class="vibe-score text-white rounded-2xl px-3 py-2 text-center flex-shrink-0">
+            <div class="text-2xl font-extrabold" id="modalScore">—</div>
+            <div class="text-[9px] font-bold uppercase tracking-wider text-slate-300">Vibe</div>
+          </div>
+        </div>
+
+        <div class="mt-5 p-4 rounded-2xl bg-rose-50 border border-rose-100">
+          <div class="text-[10px] font-extrabold uppercase tracking-[.15em] text-rose-500">Why it's on Vibe Check</div>
+          <p id="modalWhy" class="text-sm font-semibold text-slate-800 mt-1 leading-relaxed"></p>
+        </div>
+
+        <p id="modalDesc" class="text-sm text-slate-600 leading-relaxed mt-5"></p>
+
+        <div class="grid grid-cols-2 gap-2 mt-5">
+          <div class="info-box"><span>Best for</span><strong id="modalBestFor">—</strong></div>
+          <div class="info-box"><span>Parking</span><strong id="modalParking">—</strong></div>
+          <div class="info-box"><span>Halal</span><strong id="modalHalal">—</strong></div>
+          <div class="info-box"><span>Verified</span><strong id="modalVerified">—</strong></div>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button id="modalBookmarkBtn" onclick="toggleSaveCurrent()" class="flex-1 border border-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs hover:bg-slate-50">♡ Save spot</button>
+          <a id="modalMapLink" href="#" target="_blank" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-2xl text-xs text-center">Get directions ↗</a>
+        </div>
+        <a id="modalReserveLink" href="#" target="_blank" class="hidden w-full mt-2 border border-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs text-center">Reserve a table →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUGGEST MODAL -->
+<div id="suggestModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm p-4" onclick="closeSuggestModal(event)">
+  <div class="bg-white w-full max-w-lg mx-auto rounded-3xl p-6 shadow-2xl" onclick="event.stopPropagation()">
+    <button onclick="closeSuggestModal()" class="float-right p-2 text-slate-400"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div class="mb-6">
+      <div class="text-2xl mb-2">👀</div>
+      <h2 class="text-xl font-extrabold text-slate-900">Help us discover KL</h2>
+      <p class="text-xs text-slate-500 mt-1">Know somewhere genuinely worth eating? Tell us why.</p>
+    </div>
+    <form id="suggestForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+      <input type="text" name="place_name" required placeholder="Restaurant / cafe name" class="form-input">
+      <div class="grid grid-cols-2 gap-3">
+        <input type="text" name="area" required placeholder="Area e.g. Bangsar" class="form-input">
+        <input type="text" name="vibe" placeholder="Vibe e.g. Date night" class="form-input">
+      </div>
+      <textarea name="description" rows="3" placeholder="What makes it special? Who is it perfect for?" class="form-input"></textarea>
+      <input type="text" name="source" placeholder="Instagram / TikTok / website (optional)" class="form-input">
+      <button id="submitBtn" type="submit" class="w-full py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-sm">Submit recommendation →</button>
+    </form>
+    <div id="formSuccessMessage" class="hidden text-center py-8">
+      <div class="text-4xl mb-3">🎉</div><h3 class="font-extrabold text-slate-900">Thank you!</h3>
+      <p class="text-xs text-slate-500 mt-1">We'll review your recommendation.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID='1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
+const API_URL=`https://opensheet.elk.sh/${SHEET_ID}/1`;
+const FALLBACK_IMAGE='https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1000&auto=format&fit=crop&q=80';
+
+const areaCoordinates={
+  "chinatown":[3.1439,101.6974],"petaling street":[3.1439,101.6974],"imbi":[3.1422,101.7100],
+  "bangsar":[3.1292,101.6713],"pavilion / bukit bintang":[3.1488,101.7132],"bukit bintang":[3.1488,101.7132],
+  "pj old town":[3.0872,101.6461],"dataran merdeka":[3.1480,101.6937],"chow kit":[3.1636,101.6980],
+  "segambut":[3.1856,101.6606],"desa sri hartamas":[3.1610,101.6508],"hartamas":[3.1610,101.6508],
+  "ttdi":[3.1367,101.6219],"kl city centre":[3.1579,101.7116],"damansara jaya":[3.1278,101.6163],
+  "klcc":[3.1579,101.7116],"bukit damansara":[3.1500,101.6620],"mont kiara":[3.168,101.652],
+  "desa parkcity":[3.185,101.634],"damansara heights":[3.145,101.663]
+};
+
+const quickVibes=[
+  ['❤️','Date Night','date night'],['👨‍👩‍👧','Family','family'],['🥂','Celebration','celebration'],
+  ['💻','Work Lunch','work'],['🌿','Chill','chill'],['🔥','Lively','lively'],
+  ['💸','Budget','budget'],['👀','Hidden Gem','hidden']
+];
+
+let restaurants=[], currentSort='vibe', discovery='', currentRestaurant=null, map=null, mapMarkers=[], mapVisible=false;
+
+document.addEventListener('DOMContentLoaded',()=>{buildQuickVibes();fetchSheetData();lucide.createIcons();});
+
+function buildQuickVibes(){
+  document.getElementById('vibeQuickGrid').innerHTML=quickVibes.map(([emoji,label,key])=>`
+    <button onclick="selectVibe('${key}')" class="vibe-card bg-white border border-slate-200 rounded-2xl p-3 md:p-4 text-left">
+      <div class="text-xl">${emoji}</div><div class="font-extrabold text-xs md:text-sm mt-2">${label}</div>
+    </button>`).join('');
+}
+
+function normalize(v){return String(v??'').trim().toLowerCase();}
+function slug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+
+function normalizePrice(v){
+  const s=String(v??'').trim();
+  if(!s)return 'RM-RM';
+  if(/^\$+$/.test(s))return 'RM'.repeat(Math.min(s.length,4));
+  return s;
+}
+
+function parseScore(v){
+  const n=parseFloat(String(v??'').replace(/[^0-9.]/g,''));
+  return isNaN(n)?null:n;
+}
+
+function getField(item,...keys){
+  for(const k of keys){if(item[k]!==undefined && String(item[k]).trim()!=='')return String(item[k]).trim();}
+  return '';
+}
+
+function isTruthy(v){return /yes|true|1|verified|recommended|new|trending/i.test(String(v||''));}
+
+function normalizeItem(row,idx){
+  const item={};
+  Object.keys(row).forEach(k=>item[normalize(k).replace(/[\s\-_]+/g,'_')]=String(row[k]??'').trim());
+  item.id=idx;
+  item.name=getField(item,'name','place_name','restaurant');
+  item.area=getField(item,'area','neighbourhood','neighborhood')||'Kuala Lumpur';
+  item.cat_l1=getField(item,'cat_l1','catl1','vibe','category')||'Curated';
+  item.cat_l2=getField(item,'cat_l2','catl2','tag','tags');
+  item.cuisine=getField(item,'cuisine','food_type','type');
+  item.desc=getField(item,'desc','description','about')||'A KL dining spot worth discovering.';
+  item.why=getField(item,'why','why_we_recommend','why_its_on_vibe_check','editor_note')||item.desc;
+  item.price=normalizePrice(getField(item,'price','price_range','budget'));
+  item.price_text=getField(item,'price_text','price_description');
+  item.seating=normalize(getField(item,'seating','indoor_outdoor','setting'))||'indoor';
+  item.best_for=getField(item,'best_for','occasion','occasions','perfect_for')||item.cat_l2||item.cat_l1;
+  item.halal=getField(item,'halal','halal_status')||'Not specified';
+  item.parking=getField(item,'parking','parking_info')||'Not specified';
+  item.verified=getField(item,'verified','last_verified','verified_date')||'Not yet verified';
+  item.vibe_score=parseScore(getField(item,'vibe_score','vibe','score','rating'));
+  item.google_rating=parseScore(getField(item,'google_rating','google_score'));
+  item.img=getField(item,'img','image','image_url','photo')||FALLBACK_IMAGE;
+  item.reservation_url=getField(item,'reservation_url','reserve_url','booking_url','reservation');
+  item.trending=getField(item,'trending','featured','popular');
+  item.new_spot=getField(item,'new','new_spot','new_opening');
+  item.hidden=getField(item,'hidden_gem','hidden','hidden_spot');
+  item.local=getField(item,'local_favourite','local_favorite','locals_pick','local');
+  item.cuisine_text=item.cuisine||item.cat_l1;
+  item.searchText=Object.values(item).join(' ').toLowerCase();
+  return item;
+}
+
+async function fetchSheetData(){
+  const loading=document.getElementById('loadingState');
+  try{
+    const response=await fetch(API_URL,{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}. Your Google Sheet may not be public.`);
+    const raw=await response.json();
+    if(!Array.isArray(raw)||!raw.length)throw new Error('The Google Sheet returned no restaurant rows.');
+    restaurants=raw.map(normalizeItem).filter(x=>x.name);
+    loading.classList.add('hidden');
+    document.getElementById('pinContainer').classList.remove('hidden');
+    buildFilterOptions();
+    renderGrid();
+  }catch(err){
+    console.error(err);
+    loading.classList.add('hidden');
+    document.getElementById('errorBanner').classList.remove('hidden');
+    document.getElementById('errorMessage').textContent=err.message;
+    document.getElementById('pinContainer').classList.remove('hidden');
+    document.getElementById('pinContainer').innerHTML='';
+    document.getElementById('noResults').classList.remove('hidden');
+    document.getElementById('noResults').querySelector('h3').textContent='Your directory is ready — the live data just needs reconnecting.';
+  }
+}
+
+function buildFilterOptions(){
+  const areas=[...new Set(restaurants.map(r=>r.area).filter(Boolean))].sort();
+  const cuisines=[...new Set(restaurants.map(r=>r.cuisine).filter(Boolean))].sort();
+  document.getElementById('areaFilter').innerHTML='<option value="">📍 All areas</option>'+areas.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+  document.getElementById('cuisineFilter').innerHTML='<option value="">🍜 Any cuisine</option>'+cuisines.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+}
+
+function selectVibe(key){
+  discovery='';
+  document.getElementById('searchInput').value=key==='hidden'?'hidden gem':key;
+  renderGrid();
+  scrollToSection('exploreSection');
+}
+
+function quickSearch(q){document.getElementById('searchInput').value=q;renderGrid();scrollToSection('exploreSection');}
+
+function setDiscovery(type){
+  discovery=type;
+  document.getElementById('searchInput').value='';
+  renderGrid();
+}
+
+function getFiltered(){
+  const q=normalize(document.getElementById('searchInput').value);
+  const area=normalize(document.getElementById('areaFilter').value);
+  const cuisine=normalize(document.getElementById('cuisineFilter').value);
+  const price=normalize(document.getElementById('priceFilter').value);
+  const seating=normalize(document.getElementById('seatingFilter').value);
+
+  let list=restaurants.filter(r=>{
+    const searchOk=!q||r.searchText.includes(q)||semanticMatch(r,q);
+    const areaOk=!area||normalize(r.area)===area;
+    const cuisineOk=!cuisine||normalize(r.cuisine).includes(cuisine);
+    const seatingOk=!seating||normalize(r.seating).includes(seating)||normalize(r.seating)==='both';
+    const priceOk=priceMatch(r,price);
+    const discoveryOk=!discovery||discoveryMatch(r,discovery);
+    return searchOk&&areaOk&&cuisineOk&&seatingOk&&priceOk&&discoveryOk;
+  });
+
+  list.sort((a,b)=>{
+    if(currentSort==='name')return a.name.localeCompare(b.name);
+    return (b.vibe_score||0)-(a.vibe_score||0);
+  });
+  return list;
+}
+
+function semanticMatch(r,q){
+  const maps={
+    'date night':['date','romantic','intimate','couple'],
+    'family':['family','kid','children'],
+    'celebration':['celebration','birthday','anniversary','special'],
+    'work':['work','business','meeting','laptop','quiet'],
+    'chill':['chill','relaxed','quiet','cozy'],
+    'lively':['lively','music','social','busy','party'],
+    'budget':['budget','cheap','affordable','value'],
+    'hidden gem':['hidden','gem','local favourite','local favorite']
+  };
+  return (maps[q]||[]).some(k=>r.searchText.includes(k));
+}
+
+function priceMatch(r,p){
+  if(!p)return true;
+  const s=(r.price+' '+r.price_text+' '+r.searchText).toLowerCase();
+  if(p==='under50')return /\b([0-4]?\d)\b/.test(s)||r.price==='RM';
+  if(p==='50-100')return /\b(5\d|6\d|7\d|8\d|9\d|100)\b/.test(s)||r.price==='RM-RM';
+  if(p==='100plus')return /\b(1\d\d|[2-9]\d\d)\b/.test(s)||r.price.length>=6;
+  return r.price===p||s.includes(p);
+}
+
+function discoveryMatch(r,d){
+  if(d==='trending')return isTruthy(r.trending)||/trending|viral|popular/i.test(r.searchText);
+  if(d==='new')return isTruthy(r.new_spot)||/new opening|newly opened|new restaurant/i.test(r.searchText);
+  if(d==='hidden')return isTruthy(r.hidden)||/hidden gem/i.test(r.searchText);
+  if(d==='local')return isTruthy(r.local)||/local favourite|local favorite|locals pick/i.test(r.searchText);
+  return true;
+}
+
+function sortResults(type){
+  currentSort=type;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('chip-active'));
+  event.currentTarget.classList.add('chip-active');
+  renderGrid();
+}
+
+function renderGrid(){
+  if(!restaurants.length)return;
+  const list=getFiltered();
+  const container=document.getElementById('pinContainer');
+  const no=document.getElementById('noResults');
+  container.innerHTML='';
+  list.forEach(r=>container.appendChild(createCard(r)));
+  document.getElementById('pinCount').textContent=`${list.length} ${list.length===1?'spot':'spots'}`;
+  no.classList.toggle('hidden',list.length>0);
+  if(discovery){
+    const labels={trending:'Trending now',new:'New & noteworthy',hidden:'Hidden gems',local:'Local favourites'};
+    document.getElementById('boardTitle').textContent=labels[discovery]||'KL Vibe Check Picks';
+    document.getElementById('resultEyebrow').textContent='Explore KL';
+  }else{
+    document.getElementById('boardTitle').textContent='KL Vibe Check Picks';
+    document.getElementById('resultEyebrow').textContent='Curated for you';
+  }
+  updateMapMarkers(list);
+  lucide.createIcons();
+}
+
+function badge(text,cls='bg-slate-100 text-slate-700'){
+  return `<span class="inline-flex items-center px-2 py-1 rounded-full text-[9px] font-extrabold ${cls}">${escapeHtml(text)}</span>`;
+}
+
+function createCard(r){
+  const card=document.createElement('article');
+  card.className='bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col h-full';
+  card.onclick=()=>openPinModal(r);
+  const score=r.vibe_score?Number(r.vibe_score).toFixed(1):'—';
+  const badges=[
+    r.hidden&&badge('👀 Hidden gem','bg-amber-50 text-amber-700'),
+    r.new_spot&&badge('🆕 New','bg-emerald-50 text-emerald-700'),
+    r.trending&&badge('🔥 Trending','bg-rose-50 text-rose-700')
+  ].filter(Boolean).join('');
+  card.innerHTML=`
+    <div class="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+      <img src="${escapeHtml(r.img)}" alt="${escapeHtml(r.name)}" class="w-full h-full object-cover hover:scale-105 transition duration-500" onerror="this.src=FALLBACK_IMAGE">
+      <div class="absolute inset-x-3 top-3 flex justify-between items-start gap-2">
+        <div class="flex flex-wrap gap-1.5">${badges}</div>
+        <div class="vibe-score text-white rounded-xl px-2.5 py-1.5 text-center shadow-lg">
+          <div class="font-extrabold text-sm">${score}</div><div class="text-[8px] uppercase tracking-wider text-slate-300">vibe</div>
+        </div>
+      </div>
+      <button onclick="toggleSave(event,${r.id})" class="absolute bottom-3 right-3 bg-white/95 backdrop-blur text-slate-800 rounded-full p-2.5 shadow-lg hover:bg-white">
+        <i data-lucide="bookmark" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="p-4 flex flex-col flex-1">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="font-extrabold text-slate-900 text-lg leading-tight">${escapeHtml(r.name)}</h3>
+          <p class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(r.area)} · ${escapeHtml(r.price)}</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        ${r.cat_l2?badge(r.cat_l2):''}
+        ${r.cuisine?badge(r.cuisine):''}
+        ${r.seating?badge(r.seating==='both'?'Indoor + Outdoor':r.seating):''}
+      </div>
+      <div class="mt-4 p-3 rounded-2xl bg-slate-50">
+        <div class="text-[9px] uppercase tracking-[.15em] font-extrabold text-rose-500">Why it's here</div>
+        <p class="text-xs font-semibold text-slate-700 mt-1 line-clamp-2">${escapeHtml(r.why)}</p>
+      </div>
+      <div class="mt-auto pt-4 flex items-center justify-between gap-3">
+        <div class="text-[10px] font-bold text-slate-400">Best for <span class="text-slate-600">${escapeHtml(r.best_for)}</span></div>
+        <a href="${mapsUrl(r)}" target="_blank" onclick="event.stopPropagation()" class="p-2 rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white">
+          <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>`;
+  return card;
+}
+
+function mapsUrl(r){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name+' '+r.area+' Kuala Lumpur')}`;}
+
+function openPinModal(r){
+  currentRestaurant=r;
+  document.getElementById('modalImg').src=r.img;
+  document.getElementById('modalTitle').textContent=r.name;
+  document.getElementById('modalArea').textContent=r.area;
+  document.getElementById('modalPrice').textContent=r.price_text||r.price;
+  document.getElementById('modalSeating').textContent=r.seating==='both'?'Indoor + Outdoor':r.seating;
+  document.getElementById('modalScore').textContent=r.vibe_score?Number(r.vibe_score).toFixed(1):'—';
+  document.getElementById('modalWhy').textContent=r.why;
+  document.getElementById('modalDesc').textContent=r.desc;
+  document.getElementById('modalBestFor').textContent=r.best_for||'—';
+  document.getElementById('modalParking').textContent=r.parking||'Not specified';
+  document.getElementById('modalHalal').textContent=r.halal||'Not specified';
+  document.getElementById('modalVerified').textContent=r.verified||'Not yet verified';
+  document.getElementById('modalBadges').innerHTML=[
+    r.cat_l1,badge(r.cat_l2),r.cuisine&&badge(r.cuisine),
+    r.hidden&&badge('👀 Hidden gem','bg-amber-50 text-amber-700'),
+    r.new_spot&&badge('🆕 New','bg-emerald-50 text-emerald-700')
+  ].filter(Boolean).map(x=>typeof x==='string'&&x.startsWith('<span')?x:badge(x)).join('');
+  document.getElementById('modalMapLink').href=mapsUrl(r);
+  const reserve=document.getElementById('modalReserveLink');
+  if(r.reservation_url){reserve.href=r.reservation_url;reserve.classList.remove('hidden')}else reserve.classList.add('hidden');
+  document.getElementById('pinModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closePinModal(e){if(!e||e.target===document.getElementById('pinModal'))document.getElementById('pinModal').classList.add('hidden');}
+
+function getSaved(){try{return JSON.parse(localStorage.getItem('klvc_saved')||'[]')}catch{return[]}}
+function toggleSave(e,id){e.stopPropagation();const saved=getSaved();const i=saved.indexOf(id);i>=0?saved.splice(i,1):saved.push(id);localStorage.setItem('klvc_saved',JSON.stringify(saved));}
+function toggleSaveCurrent(){if(!currentRestaurant)return;toggleSave({stopPropagation:()=>{}},currentRestaurant.id);const btn=document.getElementById('modalBookmarkBtn');btn.textContent=getSaved().includes(currentRestaurant.id)?'✓ Saved':'♡ Save spot';}
+
+function toggleMapView(){
+  mapVisible=!mapVisible;
+  document.getElementById('mapSection').classList.toggle('hidden',!mapVisible);
+  document.getElementById('mapToggleBtn').innerHTML=mapVisible?'<i data-lucide="layout-grid" class="w-4 h-4"></i> Board':'<i data-lucide="map" class="w-4 h-4"></i> Map';
+  if(mapVisible){initMap();setTimeout(()=>map.invalidateSize(),200);}
+  lucide.createIcons();
+}
+
+function initMap(){
+  if(map)return;
+  map=L.map('mapContainer').setView([3.1390,101.6869],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+}
+
+function updateMapMarkers(items){
+  if(!map)return;
+  mapMarkers.forEach(m=>map.removeLayer(m));mapMarkers=[];
+  items.forEach(r=>{
+    const key=normalize(r.area);
+    const coords=areaCoordinates[key]||[3.1390+(Math.random()-.5)*.04,101.6869+(Math.random()-.5)*.04];
+    const marker=L.marker(coords).addTo(map).bindPopup(`<strong>${escapeHtml(r.name)}</strong><br><span>${escapeHtml(r.area)}</span><br><a href="${mapsUrl(r)}" target="_blank">Directions →</a>`);
+    mapMarkers.push(marker);
+  });
+}
+
+function scrollToSection(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});}
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('areaFilter').value='';
+  document.getElementById('priceFilter').value='';
+  document.getElementById('cuisineFilter').value='';
+  document.getElementById('seatingFilter').value='';
+  discovery='';
+  currentSort='vibe';
+  renderGrid();
+}
+
+function openSuggestModal(){document.getElementById('suggestModal').classList.remove('hidden');lucide.createIcons();}
+function closeSuggestModal(e){if(!e||e.target===document.getElementById('suggestModal'))document.getElementById('suggestModal').classList.add('hidden');}
+
+async function handleFormSubmit(event){
+  event.preventDefault();
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='Sending...';
+  const data=new FormData(event.target);
+  try{
+    const response=await fetch('https://formspree.io/f/mqakvode',{method:'POST',body:data,headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error('Submission failed');
+    event.target.classList.add('hidden');
+    document.getElementById('formSuccessMessage').classList.remove('hidden');
+    event.target.reset();
+  }catch(err){alert('There was an issue sending your recommendation. Please try again.');}
+  finally{btn.disabled=false;btn.textContent='Submit recommendation →';}
+}
+</script>
+
+<style>
+.quick-chip,.filter-select,.sort-btn,.form-input,.info-box{font-size:12px;font-weight:700}
+.quick-chip{padding:.5rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
+.quick-chip:hover{background:#e2e8f0}
+.filter-select{border:1px solid #e2e8f0;background:#f8fafc;border-radius:999px;padding:.65rem .9rem;outline:none}
+.filter-select:focus{border-color:#fb7185}
+.sort-btn{padding:.45rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
+.info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem}
+.info-box span{display:block;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.2rem}
+.info-box strong{display:block;color:#334155;font-size:11px}
+.form-input{width:100%;border:1px solid #e2e8f0;background:#f8fafc;border-radius:.9rem;padding:.8rem .9rem;outline:none;font-weight:500}
+.form-input:focus{border-color:#fb7185;background:#fff}
+</style>
 </body>
 </html>

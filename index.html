@@ -32,6 +32,17 @@
   .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .modal-scroll{max-height:90vh;overflow-y:auto}
   .vibe-score{background:linear-gradient(135deg,#0f172a,#334155)}
+  .quick-chip,.filter-select,.sort-btn,.form-input,.info-box{font-size:12px;font-weight:700}
+  .quick-chip{padding:.5rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
+  .quick-chip:hover{background:#e2e8f0}
+  .filter-select{border:1px solid #e2e8f0;background:#f8fafc;border-radius:999px;padding:.65rem .9rem;outline:none}
+  .filter-select:focus{border-color:#fb7185}
+  .sort-btn{padding:.45rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
+  .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem}
+  .info-box span{display:block;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.2rem}
+  .info-box strong{display:block;color:#334155;font-size:11px}
+  .form-input{width:100%;border:1px solid #e2e8f0;background:#f8fafc;border-radius:.9rem;padding:.8rem .9rem;outline:none;font-weight:500}
+  .form-input:focus{border-color:#fb7185;background:#fff}
 </style>
 </head>
 
@@ -67,7 +78,7 @@
 
 <main>
 
-<!-- HERO / DECISION FIRST -->
+<!-- HERO -->
 <section class="hero-gradient text-white">
   <div class="max-w-7xl mx-auto px-4 lg:px-8 py-14 md:py-20">
     <div class="max-w-3xl">
@@ -100,7 +111,7 @@
   </div>
 </section>
 
-<!-- WHAT'S YOUR VIBE -->
+<!-- QUICK VIBES -->
 <section class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
   <div class="flex items-end justify-between mb-4">
     <div>
@@ -109,9 +120,7 @@
     </div>
     <button onclick="resetFilters()" class="hidden sm:block text-xs font-bold text-slate-500 hover:text-slate-900">Clear</button>
   </div>
-  <div id="vibeQuickGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-    <!-- JS -->
-  </div>
+  <div id="vibeQuickGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
 </section>
 
 <!-- LIVE DISCOVERY -->
@@ -146,22 +155,17 @@
   <div class="bg-white border border-slate-200 rounded-3xl p-4 soft-shadow">
     <div class="flex flex-col lg:flex-row lg:items-center gap-3">
       <div class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mr-2">Refine</div>
-      <select id="areaFilter" onchange="renderGrid()" class="filter-select">
-        <option value="">📍 All areas</option>
-      </select>
+      <select id="areaFilter" onchange="renderGrid()" class="filter-select"><option value="">📍 All areas</option></select>
       <select id="priceFilter" onchange="renderGrid()" class="filter-select">
         <option value="">💰 Any budget</option>
         <option value="RM">$ — Budget</option>
-        <option value="$-$">$-$ — Casual</option>
-        <option value="$-$-$">$-$-$ — Mid-range</option>
-        <option value="$-$-$-$">$-$-$-$ — Special occasion</option>
+        <option value="RM-RM">$-$-$ — Casual</option>
+        <option value="RM-RM-RM">$-$-$-$ — Special occasion</option>
         <option value="under50">Under RM50</option>
         <option value="50-100">RM50–100</option>
         <option value="100plus">RM100+</option>
       </select>
-      <select id="cuisineFilter" onchange="renderGrid()" class="filter-select">
-        <option value="">🍜 Any cuisine</option>
-      </select>
+      <select id="cuisineFilter" onchange="renderGrid()" class="filter-select"><option value="">🍜 Any cuisine</option></select>
       <select id="seatingFilter" onchange="renderGrid()" class="filter-select">
         <option value="">🪑 Any seating</option>
         <option value="indoor">🏠 Indoor</option>
@@ -196,17 +200,17 @@
 
   <div id="loadingState" class="py-20 text-center">
     <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-rose-500 mb-3"></div>
-    <p class="font-bold text-slate-700">Curating KL's dining spots...</p>
-    <p class="text-xs text-slate-400 mt-1">Loading the latest directory</p>
+    <p class="font-bold text-slate-700">Connecting to Google Sheet...</p>
+    <p class="text-xs text-slate-400 mt-1">Fetching live directory</p>
   </div>
 
   <div id="errorBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
     <div class="flex gap-3">
       <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0"></i>
       <div>
-        <div class="font-extrabold text-amber-900">The live directory couldn't be loaded.</div>
+        <div class="font-extrabold text-amber-900">The Google Sheet directory couldn't be loaded.</div>
         <p id="errorMessage" class="text-xs text-amber-800 mt-1"></p>
-        <p class="text-xs text-amber-700 mt-2"><strong>Tip:</strong> Check that your Google Sheet is public. The page will still show the directory shell instead of looking broken.</p>
+        <p class="text-xs text-amber-700 mt-2"><strong>Fix:</strong> Ensure your Google Sheet access is set to "Anyone with the link can view".</p>
       </div>
     </div>
   </div>
@@ -311,9 +315,10 @@
 </div>
 
 <script>
-// 1. Declare constants FIRST so they are available globally without syntax errors
+// Google Sheet & GID setup
 const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
-const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+const GID = '270605449';
+const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1000&auto=format&fit=crop&q=80';
 
 const areaCoordinates = {
@@ -347,8 +352,11 @@ function buildQuickVibes(){
     </button>`).join('');
 }
 
+function cleanHeaderKey(k) {
+  return String(k ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
 function normalize(v){ return String(v ?? '').trim().toLowerCase(); }
-function slug(v){ return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function escapeHtml(v){ return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 
 function normalizePrice(v){
@@ -373,34 +381,41 @@ function isTruthy(v){ return /yes|true|1|verified|recommended|new|trending/i.tes
 function normalizeItem(row, idx) {
   const item = {};
   Object.keys(row).forEach(k => {
-    const cleanKey = normalize(k).replace(/[\s\-_]+/g, '_');
-    item[cleanKey] = String(row[k] ?? '').trim();
+    const key = cleanHeaderKey(k);
+    item[key] = String(row[k] ?? '').trim();
   });
 
   item.id = idx;
-  item.name = getField(item, 'name', 'place_name', 'restaurant', 'restaurant_name', 'spot_name', 'venue', 'title', 'place', 'spot');
-  item.area = getField(item, 'area', 'neighbourhood', 'neighborhood', 'location', 'district', 'zone', 'city') || 'Kuala Lumpur';
-  item.cat_l1 = getField(item, 'cat_l1', 'catl1', 'vibe', 'category', 'occasion', 'vibe_type', 'primary_vibe') || 'Curated';
-  item.cat_l2 = getField(item, 'cat_l2', 'catl2', 'tag', 'tags', 'sub_vibe', 'secondary_vibe');
-  item.cuisine = getField(item, 'cuisine', 'food_type', 'type', 'category', 'food');
-  item.desc = getField(item, 'desc', 'description', 'about', 'details', 'summary') || 'A KL dining spot worth discovering.';
-  item.why = getField(item, 'why', 'why_we_recommend', 'why_its_on_vibe_check', 'editor_note', 'review', 'editorial_note') || item.desc;
-  item.price = normalizePrice(getField(item, 'price', 'price_range', 'budget', 'cost'));
-  item.price_text = getField(item, 'price_text', 'price_description', 'pricing');
-  item.seating = normalize(getField(item, 'seating', 'indoor_outdoor', 'setting', 'environment', 'atmosphere')) || 'indoor';
-  item.best_for = getField(item, 'best_for', 'occasion', 'occasions', 'perfect_for', 'ideal_for') || item.cat_l2 || item.cat_l1;
-  item.halal = getField(item, 'halal', 'halal_status', 'halal_certified', 'dietary') || 'Not specified';
-  item.parking = getField(item, 'parking', 'parking_info', 'parking_availability') || 'Not specified';
-  item.verified = getField(item, 'verified', 'last_verified', 'verified_date', 'date_verified') || 'Not yet verified';
-  item.vibe_score = parseScore(getField(item, 'vibe_score', 'vibe', 'score', 'rating', 'vibe_rating', 'overall_score'));
-  item.google_rating = parseScore(getField(item, 'google_rating', 'google_score', 'google_stars'));
-  item.img = getField(item, 'img', 'image', 'image_url', 'photo', 'picture', 'banner', 'thumbnail') || FALLBACK_IMAGE;
-  item.reservation_url = getField(item, 'reservation_url', 'reserve_url', 'booking_url', 'reservation', 'link');
-  item.trending = getField(item, 'trending', 'featured', 'popular', 'is_trending');
-  item.new_spot = getField(item, 'new', 'new_spot', 'new_opening', 'is_new');
-  item.hidden = getField(item, 'hidden_gem', 'hidden', 'hidden_spot', 'is_hidden');
-  item.local = getField(item, 'local_favourite', 'local_favorite', 'locals_pick', 'local');
-  item.cuisine_text = item.cuisine || item.cat_l1;
+  item.name = getField(item, 'name');
+  item.area = getField(item, 'area') || 'Kuala Lumpur';
+  item.cat_l1 = getField(item, 'vibe') || 'Curated';
+  item.cat_l2 = getField(item, 'occasion');
+  item.cuisine = getField(item, 'cuisine');
+  item.why = getField(item, 'why_it_s_on_vibe_check', 'editorial_status') || 'A KL dining spot worth discovering.';
+  item.desc = getField(item, 'data_notes', 'why_it_s_on_vibe_check') || item.why;
+  item.price = normalizePrice(getField(item, 'price'));
+  item.price_text = getField(item, 'typical_spend_per_person');
+  item.seating = normalize(getField(item, 'seating', 'outdoor')) || 'indoor';
+  item.best_for = getField(item, 'best_for') || item.cat_l2 || item.cat_l1;
+  item.halal = getField(item, 'halal') || 'Not specified';
+  item.parking = getField(item, 'parking', 'parking_difficulty') || 'Not specified';
+  item.verified = getField(item, 'last_verified') || 'Not yet verified';
+  item.vibe_score = parseScore(getField(item, 'vibe_score'));
+  item.google_rating = parseScore(getField(item, 'google_rating'));
+  item.img = getField(item, 'image_url') || FALLBACK_IMAGE;
+  item.reservation_url = getField(item, 'reservation_url', 'website_url', 'instagram_url');
+  
+  // Status Flags derived from your exact sheet columns
+  item.trending = isTruthy(getField(item, 'editorial_status')) && getField(item, 'editorial_status').toLowerCase().includes('trending');
+  item.new_spot = isTruthy(getField(item, 'new_spot'));
+  item.hidden = isTruthy(getField(item, 'hidden_gem'));
+  item.local = isTruthy(getField(item, 'local_favourite'));
+
+  // Precise Latitude & Longitude map support
+  const lat = parseFloat(getField(item, 'latitude'));
+  const lng = parseFloat(getField(item, 'longitude'));
+  item.coords = (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) ? [lat, lng] : null;
+
   item.searchText = Object.values(item).join(' ').toLowerCase();
   return item;
 }
@@ -420,13 +435,14 @@ async function fetchSheetData() {
       const obj = {};
       if(r && r.c) {
         r.c.forEach((cell, i) => {
-          obj[normalize(cols[i] || `col_${i}`).replace(/[\s\-_]+/g,'_')] = cell ? (cell.v ?? '') : '';
+          const key = cleanHeaderKey(cols[i] || `col_${i}`);
+          obj[key] = cell ? (cell.f ?? cell.v ?? '') : '';
         });
       }
       return obj;
     });
 
-    if (!Array.isArray(raw) || !raw.length) throw new Error('No rows returned.');
+    if (!Array.isArray(raw) || !raw.length) throw new Error('No data found in sheet tab.');
 
     restaurants = raw.map(normalizeItem).filter(x => x.name);
     loading.classList.add('hidden');
@@ -506,10 +522,10 @@ function priceMatch(r, p){
 }
 
 function discoveryMatch(r, d){
-  if(d === 'trending') return isTruthy(r.trending) || /trending|viral|popular/i.test(r.searchText);
-  if(d === 'new') return isTruthy(r.new_spot) || /new opening|newly opened|new restaurant/i.test(r.searchText);
-  if(d === 'hidden') return isTruthy(r.hidden) || /hidden gem/i.test(r.searchText);
-  if(d === 'local') return isTruthy(r.local) || /local favourite|local favorite|locals pick/i.test(r.searchText);
+  if(d === 'trending') return r.trending || /trending|viral|popular/i.test(r.searchText);
+  if(d === 'new') return r.new_spot || /new opening|newly opened|new restaurant/i.test(r.searchText);
+  if(d === 'hidden') return r.hidden || /hidden gem/i.test(r.searchText);
+  if(d === 'local') return r.local || /local favourite|local favorite|locals pick/i.test(r.searchText);
   return true;
 }
 
@@ -594,7 +610,10 @@ function createCard(r){
   return card;
 }
 
-function mapsUrl(r){ return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + r.area + ' Kuala Lumpur')}`; }
+function mapsUrl(r){ 
+  if (r.coords) return `https://www.google.com/maps/search/?api=1&query=${r.coords[0]},${r.coords[1]}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + r.area + ' Kuala Lumpur')}`; 
+}
 
 function openPinModal(r){
   currentRestaurant = r;
@@ -646,8 +665,7 @@ function updateMapMarkers(items){
   if(!map) return;
   mapMarkers.forEach(m => map.removeLayer(m)); mapMarkers = [];
   items.forEach(r => {
-    const key = normalize(r.area);
-    const coords = areaCoordinates[key] || [3.1390 + (Math.random() - .5) * .04, 101.6869 + (Math.random() - .5) * .04];
+    const coords = r.coords || areaCoordinates[normalize(r.area)] || [3.1390 + (Math.random() - .5) * .04, 101.6869 + (Math.random() - .5) * .04];
     const marker = L.marker(coords).addTo(map).bindPopup(`<strong>${escapeHtml(r.name)}</strong><br><span>${escapeHtml(r.area)}</span><br><a href="${mapsUrl(r)}" target="_blank">Directions →</a>`);
     mapMarkers.push(marker);
   });
@@ -686,19 +704,5 @@ async function handleFormSubmit(event){
   }
 }
 </script>
-
-<style>
-.quick-chip,.filter-select,.sort-btn,.form-input,.info-box{font-size:12px;font-weight:700}
-.quick-chip{padding:.5rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
-.quick-chip:hover{background:#e2e8f0}
-.filter-select{border:1px solid #e2e8f0;background:#f8fafc;border-radius:999px;padding:.65rem .9rem;outline:none}
-.filter-select:focus{border-color:#fb7185}
-.sort-btn{padding:.45rem .75rem;border-radius:999px;background:#f1f5f9;color:#475569}
-.info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem}
-.info-box span{display:block;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.2rem}
-.info-box strong{display:block;color:#334155;font-size:11px}
-.form-input{width:100%;border:1px solid #e2e8f0;background:#f8fafc;border-radius:.9rem;padding:.8rem .9rem;outline:none;font-weight:500}
-.form-input:focus{border-color:#fb7185;background:#fff}
-</style>
 </body>
 </html>

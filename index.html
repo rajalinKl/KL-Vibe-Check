@@ -315,10 +315,10 @@
 </div>
 
 <script>
-// Google Sheet & GID setup
+  // Google Sheet & GID setup
 const SHEET_ID = '1ZKd3P3L3OMXsEQCU7jo5dZNRPoxtmaDNv4nWFerLQSQ';
 const GID = '270605449';
-const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&headers=1`;
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1000&auto=format&fit=crop&q=80';
 
 const areaCoordinates = {
@@ -359,11 +359,40 @@ function cleanHeaderKey(k) {
 function normalize(v){ return String(v ?? '').trim().toLowerCase(); }
 function escapeHtml(v){ return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 
-function normalizePrice(v){
+// --- FIXED PRICE NORMALIZATION ---
+function normalizePrice(v) {
   const s = String(v ?? '').trim();
-  if(!s) return 'RM-RM';
-  if(/^\$+$/.test(s)) return 'RM'.repeat(Math.min(s.length, 4));
-  return s;
+  if (!s) return 'RM-RM';
+
+  // Handles $, $$, $$$, $$$$ -> RM, RM-RM, RM-RM-RM
+  if (/^\$+$/.test(s)) {
+    const count = Math.min(s.length, 4);
+    return Array(count).fill('RM').join('-');
+  }
+
+  // Handles RMRM, RMRMRM -> RM-RM, RM-RM-RM
+  const cleanRM = s.toUpperCase().replace(/[\s\-]/g, '');
+  if (/^(RM)+$/.test(cleanRM)) {
+    const count = Math.min(cleanRM.length / 2, 4);
+    return Array(count).fill('RM').join('-');
+  }
+
+  // Handles tier numbers 1, 2, 3, 4
+  if (/^[1-4]$/.test(s)) {
+    return Array(parseInt(s)).fill('RM').join('-');
+  }
+
+  return s; 
+}
+
+// Extracts numeric values for spend calculations (e.g. "RM 40 - RM 80" -> {min: 40, max: 80})
+function parseSpendRange(priceStr, spendStr) {
+  const combined = (priceStr + ' ' + spendStr).toLowerCase();
+  const numbers = combined.match(/\d+/g)?.map(Number) || [];
+  
+  if (numbers.length === 0) return { min: null, max: null };
+  if (numbers.length === 1) return { min: numbers[0], max: numbers[0] };
+  return { min: Math.min(...numbers), max: Math.max(...numbers) };
 }
 
 function parseScore(v){
@@ -393,8 +422,12 @@ function normalizeItem(row, idx) {
   item.cuisine = getField(item, 'cuisine');
   item.why = getField(item, 'why_it_s_on_vibe_check', 'editorial_status') || 'A KL dining spot worth discovering.';
   item.desc = getField(item, 'data_notes', 'why_it_s_on_vibe_check') || item.why;
-  item.price = normalizePrice(getField(item, 'price'));
+  
+  // Specific Column Mappings for Price
+  item.price_raw = getField(item, 'price');
   item.price_text = getField(item, 'typical_spend_per_person');
+  item.price = normalizePrice(item.price_raw);
+  
   item.seating = normalize(getField(item, 'seating', 'outdoor')) || 'indoor';
   item.best_for = getField(item, 'best_for') || item.cat_l2 || item.cat_l1;
   item.halal = getField(item, 'halal') || 'Not specified';
@@ -405,13 +438,11 @@ function normalizeItem(row, idx) {
   item.img = getField(item, 'image_url') || FALLBACK_IMAGE;
   item.reservation_url = getField(item, 'reservation_url', 'website_url', 'instagram_url');
   
-  // Status Flags derived from your exact sheet columns
   item.trending = isTruthy(getField(item, 'editorial_status')) && getField(item, 'editorial_status').toLowerCase().includes('trending');
   item.new_spot = isTruthy(getField(item, 'new_spot'));
   item.hidden = isTruthy(getField(item, 'hidden_gem'));
   item.local = isTruthy(getField(item, 'local_favourite'));
 
-  // Precise Latitude & Longitude map support
   const lat = parseFloat(getField(item, 'latitude'));
   const lng = parseFloat(getField(item, 'longitude'));
   item.coords = (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) ? [lat, lng] : null;
@@ -430,21 +461,33 @@ async function fetchSheetData() {
     const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
     const json = JSON.parse(jsonString);
     
-    const cols = json.table.cols.map(c => c.label || c.id);
-    const raw = json.table.rows.map(r => {
+    const rawRows = json.table.rows || [];
+    if (!rawRows.length) throw new Error('No data found in Google Sheet.');
+
+    let headers = json.table.cols.map(c => c.label ? cleanHeaderKey(c.label) : '');
+    let startRowIndex = 0;
+
+    // Fallback if Google omitted label headers
+    if (!headers.some(h => h.length > 0)) {
+      headers = rawRows[0].c.map(cell => cleanHeaderKey(cell ? (cell.v ?? cell.f ?? '') : ''));
+      startRowIndex = 1;
+    }
+
+    const parsedData = [];
+    for (let i = startRowIndex; i < rawRows.length; i++) {
+      const r = rawRows[i];
+      if (!r || !r.c) continue;
       const obj = {};
-      if(r && r.c) {
-        r.c.forEach((cell, i) => {
-          const key = cleanHeaderKey(cols[i] || `col_${i}`);
-          obj[key] = cell ? (cell.f ?? cell.v ?? '') : '';
-        });
-      }
-      return obj;
-    });
+      r.c.forEach((cell, colIdx) => {
+        const key = headers[colIdx] || `col_${colIdx}`;
+        if (key) {
+          obj[key] = cell ? String(cell.f ?? cell.v ?? '').trim() : '';
+        }
+      });
+      parsedData.push(obj);
+    }
 
-    if (!Array.isArray(raw) || !raw.length) throw new Error('No data found in sheet tab.');
-
-    restaurants = raw.map(normalizeItem).filter(x => x.name);
+    restaurants = parsedData.map(normalizeItem).filter(x => x.name);
     loading.classList.add('hidden');
     document.getElementById('pinContainer').classList.remove('hidden');
     buildFilterOptions();
@@ -512,13 +555,40 @@ function semanticMatch(r, q){
   return (maps[q] || []).some(k => r.searchText.includes(k));
 }
 
+// --- ACCURATE PRICE FILTER MATCHING ---
 function priceMatch(r, p){
-  if(!p) return true;
-  const s = (r.price + ' ' + r.price_text + ' ' + r.searchText).toLowerCase();
-  if(p === 'under50') return /\b([0-4]?\d)\b/.test(s) || r.price === 'RM';
-  if(p === '50-100') return /\b(5\d|6\d|7\d|8\d|9\d|100)\b/.test(s) || r.price === 'RM-RM';
-  if(p === '100plus') return /\b(1\d\d|[2-9]\d\d)\b/.test(s) || r.price.length >= 6;
-  return r.price === p || s.includes(p);
+  if (!p) return true;
+
+  const pNorm = p.toLowerCase();
+  const rPriceNorm = r.price.toLowerCase().replace(/\s+/g, '');
+  
+  // 1. Tier Match (RM, RM-RM, RM-RM-RM)
+  if (pNorm === 'rm' || pNorm === 'rm-rm' || pNorm === 'rm-rm-rm') {
+    if (rPriceNorm === pNorm) return true;
+    if (pNorm === 'rm' && (rPriceNorm === '$' || rPriceNorm === '1')) return true;
+    if (pNorm === 'rm-rm' && (rPriceNorm === '$$' || rPriceNorm === '2')) return true;
+    if (pNorm === 'rm-rm-rm' && (rPriceNorm === '$$$' || rPriceNorm === '$$$$' || rPriceNorm === '3' || rPriceNorm === '4')) return true;
+  }
+
+  // 2. Numeric Range Match (under50, 50-100, 100plus)
+  const range = parseSpendRange(r.price_raw, r.price_text);
+  
+  if (p === 'under50') {
+    if (range.min !== null && range.min < 50) return true;
+    if (rPriceNorm === 'rm' || rPriceNorm === '$' || rPriceNorm === '1') return true;
+  }
+  if (p === '50-100') {
+    if (range.min !== null && range.max !== null) {
+      if (range.min <= 100 && range.max >= 50) return true;
+    }
+    if (rPriceNorm === 'rm-rm' || rPriceNorm === '$$' || rPriceNorm === '2') return true;
+  }
+  if (p === '100plus') {
+    if (range.max !== null && range.max >= 100) return true;
+    if (rPriceNorm === 'rm-rm-rm' || rPriceNorm === '$$$' || rPriceNorm === '$$$$' || rPriceNorm === '3' || rPriceNorm === '4') return true;
+  }
+
+  return r.searchText.includes(pNorm);
 }
 
 function discoveryMatch(r, d){
@@ -571,6 +641,10 @@ function createCard(r){
     r.new_spot && badge('🆕 New','bg-emerald-50 text-emerald-700'),
     r.trending && badge('🔥 Trending','bg-rose-50 text-rose-700')
   ].filter(Boolean).join('');
+  
+  // Show Typical Spend if available, otherwise tier
+  const displayPrice = r.price_text ? escapeHtml(r.price_text) : escapeHtml(r.price);
+
   card.innerHTML = `
     <div class="relative aspect-[4/3] bg-slate-100 overflow-hidden">
       <img src="${escapeHtml(r.img)}" alt="${escapeHtml(r.name)}" class="w-full h-full object-cover hover:scale-105 transition duration-500" onerror="this.src=FALLBACK_IMAGE">
@@ -588,7 +662,7 @@ function createCard(r){
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
           <h3 class="font-extrabold text-slate-900 text-lg leading-tight">${escapeHtml(r.name)}</h3>
-          <p class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(r.area)} · ${escapeHtml(r.price)}</p>
+          <p class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(r.area)} · ${displayPrice}</p>
         </div>
       </div>
       <div class="flex flex-wrap gap-1.5 mt-3">
@@ -620,7 +694,7 @@ function openPinModal(r){
   document.getElementById('modalImg').src = r.img;
   document.getElementById('modalTitle').textContent = r.name;
   document.getElementById('modalArea').textContent = r.area;
-  document.getElementById('modalPrice').textContent = r.price_text || r.price;
+  document.getElementById('modalPrice').textContent = r.price_text ? `${r.price} (${r.price_text})` : r.price;
   document.getElementById('modalSeating').textContent = r.seating === 'both' ? 'Indoor + Outdoor' : r.seating;
   document.getElementById('modalScore').textContent = r.vibe_score ? Number(r.vibe_score).toFixed(1) : '—';
   document.getElementById('modalWhy').textContent = r.why;
@@ -702,7 +776,6 @@ async function handleFormSubmit(event){
   } finally {
     btn.disabled = false; btn.textContent = 'Submit recommendation →';
   }
-}
-</script>
+}</script>
 </body>
 </html>
